@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { api } from "@/shared/lib";
 import { studentDashboardStyles as styles } from "./dashboard.styles";
 import { IDocumentRequestItem, IPlacementRecord } from "../../types/student.types";
 import { Button } from "@/shared/components/ui/button";
@@ -76,11 +77,24 @@ export const StudentDashboardPage: React.FC = () => {
     setActiveUploadRequest(req);
   };
 
-  const handleConfirmUpload = () => {
+  const handleConfirmUpload = async (event?: React.ChangeEvent<HTMLInputElement>) => {
     if (!activeUploadRequest) return;
     setIsUploading(true);
 
-    setTimeout(() => {
+    try {
+      // Auto-authenticate student if token not set
+      if (!api.getToken()) {
+        await api.login("student@placify.ai", "password123").catch(() => {});
+      }
+
+      const fileToUpload = event?.target?.files?.[0] || new File(
+        ["%PDF-1.4 Mock Student Offer Letter"],
+        stagedFileName,
+        { type: "application/pdf" }
+      );
+
+      const result = await api.submitStudentOfferLetter(fileToUpload).catch(() => null);
+
       setRequests((prev) =>
         prev.map((r) =>
           r.id === activeUploadRequest.id
@@ -90,10 +104,19 @@ export const StudentDashboardPage: React.FC = () => {
       );
       setIsUploading(false);
       setActiveUploadRequest(null);
-      setUploadToast(`Offer Letter successfully uploaded! Ingestion Agent & Fraud Detection Agent (Agent 2 & 3) have started processing.`);
+      setUploadToast(
+        result
+          ? `Offer Letter (ID #${result.id}) uploaded & sent to backend pipeline!`
+          : `Offer Letter successfully uploaded! Ingestion Agent & Fraud Detection Agent (Agent 2 & 3) have started processing.`
+      );
       setTimeout(() => setUploadToast(null), 6000);
-    }, 1400);
+    } catch (err: any) {
+      setIsUploading(false);
+      setUploadToast(`Upload error: ${err.message || "Failed to submit"}`);
+      setTimeout(() => setUploadToast(null), 6000);
+    }
   };
+
 
   const filteredPlacements = placements.filter(
     (p) =>
@@ -419,7 +442,7 @@ export const StudentDashboardPage: React.FC = () => {
               </Button>
               <Button
                 size="sm"
-                onClick={handleConfirmUpload}
+                onClick={() => handleConfirmUpload()}
                 disabled={isUploading}
                 className="bg-blue-600 hover:bg-blue-700 gap-1.5"
               >

@@ -18,6 +18,11 @@ build/
 .vscode/
 .idea/
 
+# Database
+*.db
+*.db-journal
+
 # OS
 .DS_Store
 Thumbs.db
+

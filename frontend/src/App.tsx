@@ -3,25 +3,47 @@ import { UserRole } from "@/shared/types";
 import { ThemeProvider } from "@/shared/context/theme-context";
 import { AppLayout } from "@/shared/components/layout";
 import { PRPipelinePage } from "@/modules/pr";
-import { FacultyVerificationWorkspacePage, DocumentHistoryPage } from "@/modules/verification";
+import { FacultyVerificationWorkspacePage, DocumentHistoryPage, CompareDocumentPage } from "@/modules/verification";
 import { CoordinatorDrivesPage } from "@/modules/coordinator";
 import { StudentDashboardPage } from "@/modules/student";
+import { AdminOverviewPage } from "@/modules/admin";
 import {
   UploadCloud,
   FileCheck2,
   Sparkles,
-  ArrowRight,
-  ShieldCheck
+  ArrowRight
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 
 export const App: React.FC = () => {
-  // Default role is faculty (Teacher) to immediately show the layout in the user's mockup
+  // Default role is faculty (Teacher) matching user's initial mockup
   const [currentRole, setCurrentRole] = useState<UserRole>("faculty");
   const [activeNavId, setActiveNavId] = useState<string>("history");
 
   const renderContent = () => {
-    // When role is faculty / teacher:
+    // 1. SUPER ADMIN: Unrestricted access across all modules & systems
+    if (currentRole === "admin") {
+      switch (activeNavId) {
+        case "admin_overview":
+          return <AdminOverviewPage onNavigate={(target) => setActiveNavId(target)} />;
+        case "faculty_workspace":
+          return <FacultyVerificationWorkspacePage />;
+        case "history":
+          return <DocumentHistoryPage onOpenWorkspace={() => setActiveNavId("faculty_workspace")} />;
+        case "coordinator_drives":
+        case "erp_sync":
+          return <CoordinatorDrivesPage />;
+        case "pr_pipeline":
+        case "cohort_15":
+          return <PRPipelinePage />;
+        case "student_dashboard":
+          return <StudentDashboardPage />;
+        default:
+          return <AdminOverviewPage onNavigate={(target) => setActiveNavId(target)} />;
+      }
+    }
+
+    // 2. TEACHER / FACULTY: Document history, batch uploads, verification workspace
     if (currentRole === "faculty") {
       switch (activeNavId) {
         case "history":
@@ -132,26 +154,7 @@ export const App: React.FC = () => {
             </div>
           );
         case "comparisons":
-          return (
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  Document Comparisons & Fraud Audits
-                </h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  Cross-verify candidate claims against company compensation slabs, metadata signatures, and previous batch cohorts.
-                </p>
-              </div>
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
-                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-sm">
-                  <ShieldCheck className="w-4 h-4" /> SHA-256 Tamper & Duplicate Cross-Check
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                  All 142 uploaded offer documents in Computer Science have unique cryptographic hashes. No duplicated offer templates detected across multi-campus tenants.
-                </p>
-              </div>
-            </div>
-          );
+          return <CompareDocumentPage onBack={() => setActiveNavId("dashboard")} />;
         case "workspace":
           return <FacultyVerificationWorkspacePage />;
         default:
@@ -159,7 +162,7 @@ export const App: React.FC = () => {
       }
     }
 
-    // When role is PR Hub:
+    // 3. PR HUB: 15-Student cohort management, PR pipeline, ingestion tasks
     if (currentRole === "pr") {
       switch (activeNavId) {
         case "pr_pipeline":
@@ -169,8 +172,8 @@ export const App: React.FC = () => {
       }
     }
 
-    // When role is Coordinator or Admin:
-    if (currentRole === "placement_coordinator" || currentRole === "admin") {
+    // 4. PLACEMENT COORDINATOR: Multi-campus drives, ERP sync, company audits
+    if (currentRole === "placement_coordinator") {
       switch (activeNavId) {
         case "coordinator_drives":
         case "erp_sync":
@@ -181,18 +184,18 @@ export const App: React.FC = () => {
       }
     }
 
-    // When role is Student:
+    // 5. STUDENT: My placements, upload offer, senior placement directory
     if (currentRole === "student") {
       return <StudentDashboardPage />;
     }
 
-    // Fallback for settings or help
+    // Fallbacks
     if (activeNavId === "settings") {
       return (
         <div className="space-y-6">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Settings</h1>
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-            <p className="text-sm text-slate-500">Preferences and notification settings for your account.</p>
+            <p className="text-sm text-slate-500">Preferences, role delegation, and notification settings.</p>
           </div>
         </div>
       );
@@ -203,7 +206,7 @@ export const App: React.FC = () => {
         <div className="space-y-6">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Help & Support</h1>
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-            <p className="text-sm text-slate-500">Need help with document verification or PR cohort management? Contact support.</p>
+            <p className="text-sm text-slate-500">Need assistance with 7-Agent AI checks, PR cohorts or ERP exports? Contact university placement support.</p>
           </div>
         </div>
       );
@@ -219,8 +222,9 @@ export const App: React.FC = () => {
         onRoleChange={(newRole) => {
           setCurrentRole(newRole);
           if (newRole === "faculty") setActiveNavId("history");
+          else if (newRole === "admin") setActiveNavId("admin_overview");
           else if (newRole === "pr") setActiveNavId("pr_pipeline");
-          else if (newRole === "placement_coordinator" || newRole === "admin") setActiveNavId("coordinator_drives");
+          else if (newRole === "placement_coordinator") setActiveNavId("coordinator_drives");
           else if (newRole === "student") setActiveNavId("student_dashboard");
         }}
         activeNavId={activeNavId}

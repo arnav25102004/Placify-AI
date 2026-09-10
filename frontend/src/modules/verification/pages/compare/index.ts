@@ -1,0 +1,1 @@
+export { CompareDocumentPage } from "./CompareDocumentPage";

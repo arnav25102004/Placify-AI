@@ -18,7 +18,9 @@ import {
   Building,
   GraduationCap,
   Sparkles,
-  Check
+  Check,
+  ShieldAlert,
+  Activity
 } from "lucide-react";
 import { ThemeToggle } from "@/shared/components/ui/theme-toggle";
 import { Input } from "@/shared/components/ui/input";
@@ -36,6 +38,7 @@ export interface NavItemConfig {
   label: string;
   icon: React.ElementType;
   badge?: string | number;
+  section?: string;
 }
 
 interface UserProfileConfig {
@@ -44,6 +47,7 @@ interface UserProfileConfig {
   roleLabel: string;
   initials: string;
   avatarBg: string;
+  roleSubtitle: string;
 }
 
 interface AppLayoutProps {
@@ -64,36 +68,44 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
 
-  // Role metadata config: navigation items tailored to each role
+  // Role metadata config: navigation items tailored strictly to each role's authorized capabilities
   const roleNavItems: Record<UserRole, NavItemConfig[]> = {
+    // 1. Teacher / Faculty — Document verification, batch uploads, discrepancy comparisons & verification history
     faculty: [
-      { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
-      { id: "upload", label: "Upload Documents", icon: UploadCloud },
+      { id: "dashboard", label: "Dashboard", icon: LayoutGrid, badge: "Overview" },
+      { id: "upload", label: "Upload Documents", icon: UploadCloud, badge: "Batch" },
       { id: "comparisons", label: "Comparisons", icon: ArrowRightLeft },
-      { id: "history", label: "History", icon: Clock },
+      { id: "history", label: "History", icon: Clock, badge: 142 },
+      { id: "workspace", label: "Verification Workspace", icon: Sparkles, badge: "AI Ready" },
     ],
+    // 2. PR Hub — Cohort of 15 assigned students, ingestion requests, PR pipeline
     pr: [
-      { id: "pr_pipeline", label: "PR Pipeline", icon: Users },
-      { id: "cohort_15", label: "15 Students Cohort", icon: GraduationCap },
-      { id: "upload_requests", label: "Document Ingestion", icon: UploadCloud },
-      { id: "history", label: "Verification Log", icon: Clock },
+      { id: "pr_pipeline", label: "PR Pipeline", icon: Users, badge: "15 Students" },
+      { id: "upload_requests", label: "Document Ingestion", icon: UploadCloud, badge: "New" },
+      { id: "history", label: "Submission History", icon: Clock },
     ],
+    // 3. Placement Coordinator — Multi-company drives, eligibility, ERP sync & audit trails
     placement_coordinator: [
-      { id: "coordinator_drives", label: "Placement Drives", icon: Building },
+      { id: "coordinator_drives", label: "Placement Drives", icon: Building, badge: "Live" },
       { id: "erp_sync", label: "ERP & Audit Sync", icon: FileCheck2 },
       { id: "comparisons", label: "Campus Analytics", icon: ArrowRightLeft },
       { id: "history", label: "Master Records", icon: Clock },
     ],
+    // 4. Student — View own placement status, upload offer letter, view senior mentors
     student: [
       { id: "student_dashboard", label: "My Placements", icon: LayoutGrid },
-      { id: "upload", label: "Upload Offer Letter", icon: UploadCloud },
-      { id: "comparisons", label: "Senior Placements", icon: Sparkles },
+      { id: "upload", label: "Upload Offer Letter", icon: UploadCloud, badge: "Action" },
+      { id: "comparisons", label: "Senior Placements", icon: GraduationCap },
       { id: "history", label: "Status History", icon: Clock },
     ],
+    // 5. Admin — UNRESTRICTED FULL ROOT ACCESS across all subsystems
     admin: [
-      { id: "coordinator_drives", label: "Institutional Overview", icon: Building },
-      { id: "erp_sync", label: "ERP & Multi-Campus", icon: FileCheck2 },
-      { id: "history", label: "Audit Log", icon: Clock },
+      { id: "admin_overview", label: "Admin Console", icon: ShieldAlert, badge: "Root", section: "Governance" },
+      { id: "faculty_workspace", label: "7-Agent Workspace", icon: Sparkles, badge: "AI", section: "Governance" },
+      { id: "history", label: "Global Doc History", icon: Clock, badge: 892, section: "Governance" },
+      { id: "coordinator_drives", label: "Drives & Placements", icon: Building, section: "Institutional" },
+      { id: "pr_pipeline", label: "PR 1:15 Cohorts", icon: Users, badge: 74, section: "Institutional" },
+      { id: "student_dashboard", label: "Student Experience", icon: GraduationCap, section: "Institutional" },
     ],
   };
 
@@ -105,6 +117,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       roleLabel: "Teacher",
       initials: "MI",
       avatarBg: "bg-purple-600 text-white",
+      roleSubtitle: "Faculty Reviewer • CS Dept",
     },
     pr: {
       name: "Rohit Patel",
@@ -112,6 +125,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       roleLabel: "PR Representative",
       initials: "RP",
       avatarBg: "bg-amber-600 text-white",
+      roleSubtitle: "PR Cohort A (15 Students)",
     },
     placement_coordinator: {
       name: "Prof. S. K. Roy",
@@ -119,6 +133,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       roleLabel: "Coordinator",
       initials: "SR",
       avatarBg: "bg-rose-600 text-white",
+      roleSubtitle: "Placement Cell • Institutional",
     },
     student: {
       name: "Arnav Sharma",
@@ -126,13 +141,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       roleLabel: "Student",
       initials: "AS",
       avatarBg: "bg-blue-600 text-white",
+      roleSubtitle: "CS-2021-042 • 8.92 CGPA",
     },
     admin: {
       name: "Admin Controller",
       email: "admin@placify.internal",
-      roleLabel: "Admin",
-      initials: "AC",
+      roleLabel: "Super Admin",
+      initials: "SA",
       avatarBg: "bg-indigo-600 text-white",
+      roleSubtitle: "Full Root Privileges • 5 Campuses",
     },
   };
 
@@ -141,12 +158,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
   const handleRoleSwitch = (newRole: UserRole) => {
     onRoleChange(newRole);
-    // Reset to default nav of that role
-    const newItems = roleNavItems[newRole];
-    if (newItems && newItems.length > 0) {
-      if (newRole === "faculty") {
-        onNavSelect("history"); // Default matches screenshot
-      } else {
+    if (newRole === "faculty") {
+      onNavSelect("history"); // Default matches mockup
+    } else if (newRole === "admin") {
+      onNavSelect("admin_overview");
+    } else {
+      const newItems = roleNavItems[newRole];
+      if (newItems && newItems.length > 0) {
         onNavSelect(newItems[0].id);
       }
     }
@@ -168,17 +186,22 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           mobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
       >
-        {/* Top Part: Brand + Nav Items */}
-        <div className="flex flex-col flex-1 overflow-y-auto px-4 pt-5 pb-4">
+        {/* Top Part: Brand + Role Badge + Nav Items */}
+        <div className="flex flex-col flex-1 overflow-y-auto px-4 pt-5 pb-4 space-y-4">
           {/* Brand Logo Header */}
-          <div className="flex items-center justify-between px-2 mb-6">
+          <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
                 <Shield className="w-4 h-4 fill-white" />
               </div>
-              <span className="font-bold text-lg text-slate-900 dark:text-white tracking-tight">
-                Placify
-              </span>
+              <div className="flex flex-col">
+                <span className="font-bold text-lg text-slate-900 dark:text-white tracking-tight leading-none">
+                  Placify
+                </span>
+                <span className="text-[10px] text-slate-400 font-medium tracking-wide">
+                  Placement Intelligence
+                </span>
+              </div>
             </div>
 
             {/* Mobile close button */}
@@ -188,6 +211,21 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             >
               <X className="w-5 h-5" />
             </button>
+          </div>
+
+          {/* Active Role Identifier Pill */}
+          <div className="px-2">
+            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  {currentProfile.roleLabel}
+                </span>
+              </div>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold uppercase">
+                {currentRole === "admin" ? "All Access" : "Scoped"}
+              </span>
+            </div>
           </div>
 
           {/* Role Navigation Items */}
@@ -202,12 +240,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     onNavSelect(item.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
                     isActive
                       ? "bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-semibold"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
                   }`}
                 >
+                  {/* Subtle active left pill bar */}
+                  {isActive && (
+                    <span className="absolute left-0 top-2 bottom-2 w-1 bg-blue-600 rounded-r-full" />
+                  )}
                   <Icon
                     className={`w-4 h-4 ${
                       isActive
@@ -217,7 +259,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   />
                   <span className="truncate">{item.label}</span>
                   {item.badge && (
-                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-bold">
+                    <span
+                      className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                        isActive
+                          ? "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                      }`}
+                    >
                       {item.badge}
                     </span>
                   )}
@@ -225,6 +273,21 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               );
             })}
           </nav>
+
+          {/* Mid-Sidebar Widget: 7-Agent Status Micro-Card */}
+          <div className="pt-2 px-1">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-transparent border border-slate-200/80 dark:border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Activity className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> 7-Agent Engine
+                </span>
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Active</span>
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                Automated OCR, Fraud Audit & ERP Compliance active across campus.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Bottom Part: Settings, Help & User Profile */}
@@ -311,7 +374,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 rounded-full ring-2 ring-white dark:ring-slate-950" />
             </button>
 
-            {/* Role Selector Pill Dropdown matching mockup */}
+            {/* Role Selector Pill Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-colors cursor-pointer">
@@ -320,16 +383,36 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   >
                     {currentProfile.initials}
                   </span>
-                  <span className="max-w-[90px] truncate">{currentProfile.roleLabel}</span>
+                  <span className="max-w-[100px] truncate">{currentProfile.roleLabel}</span>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60 p-1.5 shadow-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+              <DropdownMenuContent align="end" className="w-64 p-1.5 shadow-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                 <DropdownMenuLabel className="text-[10px] font-mono uppercase text-slate-400 px-2 py-1">
-                  Switch Role & Features
+                  Switch Operational Role
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
 
+                {/* 1. Super Admin (Full Root Access) */}
+                <DropdownMenuItem
+                  onClick={() => handleRoleSwitch("admin")}
+                  className="flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">
+                      SA
+                    </span>
+                    <div>
+                      <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1">
+                        Super Admin <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-mono">ALL ACCESS</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500">Root Over All Portals & Agents</div>
+                    </div>
+                  </div>
+                  {currentRole === "admin" && <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
+                </DropdownMenuItem>
+
+                {/* 2. Faculty / Teacher */}
                 <DropdownMenuItem
                   onClick={() => handleRoleSwitch("faculty")}
                   className="flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -346,6 +429,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   {currentRole === "faculty" && <Check className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
                 </DropdownMenuItem>
 
+                {/* 3. PR Hub */}
                 <DropdownMenuItem
                   onClick={() => handleRoleSwitch("pr")}
                   className="flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -362,6 +446,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   {currentRole === "pr" && <Check className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
                 </DropdownMenuItem>
 
+                {/* 4. Placement Coordinator */}
                 <DropdownMenuItem
                   onClick={() => handleRoleSwitch("placement_coordinator")}
                   className="flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -378,6 +463,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   {currentRole === "placement_coordinator" && <Check className="w-4 h-4 text-rose-600 dark:text-rose-400" />}
                 </DropdownMenuItem>
 
+                {/* 5. Student View */}
                 <DropdownMenuItem
                   onClick={() => handleRoleSwitch("student")}
                   className="flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"

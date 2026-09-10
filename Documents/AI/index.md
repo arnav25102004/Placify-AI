@@ -12,6 +12,7 @@ Covers agent-operating governance only. Does NOT cover the Gemini extraction int
 ## High-Level Overview
 | Document | Concern |
 |---|---|
+| [`7-agents.md`](7-agents.md) | Multi-agent system architecture for verification, fraud detection, and referral matching |
 | [`agents.md`](agents.md) | The operating contract every agent session follows |
 | [`prompts.md`](prompts.md) | How to phrase requests to this repo for good results |
 | [`workflows.md`](workflows.md) | Standard step sequences for common task shapes |

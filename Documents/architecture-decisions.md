@@ -52,6 +52,55 @@ N/A — this is a reference log, not a process document.
   - *Round-robin fair dispatcher* (one job per active teacher batch, cycling) — considered and designed in principle, but rejected for Phase 1: it requires an additional dispatcher component (tracking "active batches," cycling job admission into the real queue) that adds build time without a confirmed need. Deferred, not discarded — see Future Improvements below.
 - **Consequences:** Under simultaneous multi-teacher bursts, a teacher queued behind a large earlier batch may see a longer wait before their first document starts processing. This is mitigated by making queue position visible in the UI (`Queued` vs `Processing` vs `Done` status per document, per [`Frontend/features/verification-workspace.md`](Frontend/features/verification-workspace.md)) so the wait reads as expected behavior, not a fault. If real usage shows this wait is unacceptable, revisit with a new ADR superseding this one — do not silently add fairness logic without recording why.
 
+### ADR-005: 3 Connected Modules Pipeline & Request-Driven Document Validation
+- **Context:** The system requirements specify three deeply interconnected user roles: Students, Placement Representatives (PRs), and Faculty. Offer letter verification requires clean data matching and clear authorization boundaries (e.g. students viewing peer contact details within campus, while offer letter documents must remain strictly private to PRs, assigned In-charge Faculty, and Placement Admins).
+- **Decision:** 
+  1. Structure the platform around 3 connected modules: Student Portal, PR Management, and Faculty Student Letter Validation.
+  2. Implement a **request-driven document upload workflow**: students upload offer letters only after a PR or Faculty issues an upload request task (not unsolicited direct student ingestion).
+  3. Dynamic assignment: PR or Faculty dynamically selects the specific In-charge Faculty for the student during request creation.
+  4. Auto-extraction & verification: Google Gemini extracts structured data, the system cross-matches it against student profile & request details, and the In-charge Faculty performs side-by-side verification before committing records directly to the College ERP.
+  5. Privacy controls: Contact details (email/phone) are visible to authenticated students within the same campus domain; offer letter files are strictly restricted to the assigned In-charge Faculty, PR, and Placement Admins.
+- **Alternatives Considered:**
+  - *Unrestricted direct student uploads without request tasks* — rejected: creates unorganized submission queues and missing metadata.
+  - *Static pre-configured faculty assignment* — rejected: does not match operational reality across multi-campus batches where faculty mentors change dynamically per placement drive.
+- **Consequences:** Requires document request entities and state machines in the database (`requested` → `uploaded` → `extracting` → `needs_review` → `verified` → `exported_to_erp`). Ensures complete traceability, strict document privacy, and automated ERP synchronization. See [`future-additions.md`](future-additions.md).
+
+### ADR-006: 7-Agent Architecture for Verification, Fraud Detection & Referral Matching
+- **Context:** Automating placement processing requires specialized capabilities across pre-OCR preparation, structured LLM extraction, tampering/fraud detection, profile cross-referencing, faculty discrepancy assistance, mentorship/referral matching, and ERP export compliance. Monolithic prompt pipelines are brittle and fail to isolate fraud and match logic.
+- **Decision:** Implement a 7-agent pipeline:
+  1. *Ingestion & Pre-OCR Agent:* File health, resolution, rotation, text-layer pre-processing.
+  2. *Information Extraction Agent (Parser):* Structured schema extraction of compensation, role, bond terms via OpenAI-compatible SDK (supporting NVIDIA NIM / Gemini).
+  3. *Document Authenticity & Fraud Detection Agent:* SHA-256 duplicate detection, PDF metadata tool trace auditing, salary anomaly flagging.
+  4. *Cross-Verification & Profile Matching Agent:* Verifies student identity, cohort timeline, and PR request metadata alignment.
+  5. *Faculty Assistant & Discrepancy Agent:* Scores confidence, flags anomalies, and pre-populates review actions for the verification workspace.
+  6. *Referral & Mentorship Matching Agent:* Similarity matching between juniors and placed seniors based on skills, company, and timeline.
+  7. *Audit & ERP Sync Compliance Agent:* Business rule validation, append-only audit logging, and direct REST push to university ERP.
+- **Alternatives Considered:**
+  - *Single massive monolithic prompt* — rejected: high latency, token cost, prompt degradation, and lack of isolation between fraud checks and data extraction.
+- **Consequences:** Agents 2 & 3 run in parallel inside Celery background workers. High accuracy, explainable discrepancy flags for faculty, and modular maintainability. Documented in [`Documents/AI/7-agents.md`](AI/7-agents.md).
+
+### ADR-007: Extensible Role-Based Access Control (RBAC) Architecture
+- **Context:** The system contains diverse stakeholder tiers (Students, PRs, Faculty, Placement Coordinators) and must seamlessly support new user archetypes in future phases (e.g. Recruiters, Deans, Alumni Mentors) without structural rewrites or database migration pain.
+- **Decision:** Use an extensible role pattern centered on a string/enum `role` identifier on `users`, supplemented by declarative permission scopes:
+  1. Default roles: `student`, `pr`, `faculty`, `placement_coordinator`, `admin`.
+  2. Sub-module and route authorization evaluate role scopes dynamically.
+  3. Adding new roles requires registering the new role name and its capability map without altering core domain entities.
+- **Alternatives Considered:**
+  - *Hardcoding portal separation by separate databases/apps* — rejected: prevents fluid transitions (e.g., student graduating to PR, or faculty becoming coordinator).
+- **Consequences:** Centralizes authorization in FastAPI dependencies and React route guards; future user types require zero schema restructuring. Documented in [`Backend/authentication.md`](Backend/authentication.md).
+
+### ADR-008: PR-Managed Student Cohorts (1 PR : 15 Students, No Direct Student Accounts)
+- **Context:** Students do not hold individual user login accounts in the system. Operational burden of onboarding 11,000+ individual student logins creates compliance and adoption overhead. Placement Representatives (PRs) operate as operational data owners for tight cohorts of ~15 students.
+- **Decision:** 
+  1. Students are modeled as managed entities (`students` table) rather than active `users` login accounts.
+  2. Each PR is assigned a cohort of exactly **~15 students**.
+  3. The PR inputs student academic metadata, graduation batch timelines, and placement progress.
+  4. When an offer letter is received (internship, PPO, full-time), the PR directly uploads the document to the system on behalf of the student and selects the designated In-charge Faculty for validation.
+  5. The 7-Agent pipeline and Faculty verification workspace operate on these PR-submitted records without requiring student login interaction.
+- **Alternatives Considered:**
+  - *Individual student login portal* — rejected: students will not create accounts; PRs are the dedicated operational liaisons tasked with managing data entry and document collection.
+- **Consequences:** Eliminates student authentication overhead, prevents submission delays, and establishes a single accountable PR per 15 students. Documented in [`Documents/future-additions.md`](future-additions.md).
+
 ## Inputs
 Cross-cutting architectural questions raised during design or implementation of any domain.
 

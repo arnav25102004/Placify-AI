@@ -14,9 +14,13 @@ Covers PostgreSQL index definitions only. Does NOT cover schema design itself (s
 |---|---|---|
 | `documents` | `(batch_id, status)` | Per-batch status listing (`GET /batches/{id}/documents`) |
 | `documents` | `(file_hash)` | Duplicate-file fraud detection during extraction |
+| `document_requests` | `(student_id, status)` | Student pending upload request dashboard & notifications |
+| `document_requests` | `(incharge_faculty_id, status)` | Faculty verification workspace queue |
+| `document_requests` | `(pr_id, status)` | PR batch pipeline monitoring & cohort progress |
 | `batches` | `(teacher_id, created_at)` | "Recent batches" dashboard, per-teacher batch listing |
 | `audit_logs` | `(document_id, created_at)` | Full audit history for one document, in order |
-| `users` | `(email)` unique | Login lookup |
+| `users` | `(email)` unique | Login lookup via institutional email |
+| `users` | `(campus_id, batch_timeline)` | Campus senior/junior directory & peer discoverability |
 
 ## Design Principles
 1. **Every index maps to a named query pattern in this or a sibling document** — no index exists "just in case."

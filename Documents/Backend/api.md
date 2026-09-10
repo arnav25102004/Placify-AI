@@ -14,12 +14,21 @@ All endpoints are versioned under `/api/v1/`, JSON in and out (except file uploa
 
 | Endpoint | Method | Purpose |
 |---|---|---|
-| `/api/v1/auth/login` | POST | Email+password → JWT |
+| `/api/v1/auth/login` | POST | Email+password → JWT (PRs, faculty, placement_coordinators, admins) |
+| `/api/v1/pr/students` | GET / POST | PR lists and adds/edits students in their assigned 15-student cohort |
+| `/api/v1/pr/students/{id}/upload` | POST | PR uploads offer letter for a student, dynamically assigning In-charge Faculty |
+| `/api/v1/students/directory` | GET | Campus peer/senior directory (filtered by batch timeline, company, compensation) |
+| `/api/v1/placements/history` | GET | Placement outcomes & company history across past/current batches |
+| `/api/v1/pr/pipeline` | GET | PR cohort pipeline monitoring (status of assigned 15 students) |
+| `/api/v1/faculty/queue` | GET | In-charge faculty review queue of auto-matched documents |
+| `/api/v1/coordinator/drives` | GET | Placement Coordinator campus-wide placement drive tracker & stats |
+| `/api/v1/coordinator/assign-faculty` | POST | Placement Coordinator assigns or reassigns In-charge Faculty for students |
 | `/api/v1/batches` | POST | Create a batch, upload files (multipart, streamed to Drive) |
 | `/api/v1/batches` | GET | List the authenticated teacher's batches |
 | `/api/v1/batches/{batch_id}/documents` | GET | Per-document status within a batch (`pending`/`processing`/`needs_review`/`verified`/`rejected`) |
 | `/api/v1/documents/{document_id}` | GET | Full extraction detail + Drive preview link, for the verification workspace |
 | `/api/v1/documents/{document_id}/verify` | POST | Approve / reject / edit action; writes `audit_logs` |
+| `/api/v1/documents/{document_id}/export` | POST | Direct REST push of approved document data to College ERP |
 | `/api/v1/batches/{batch_id}/export` | POST | Triggers ERP export for all verified documents in the batch |
 
 ## Design Principles

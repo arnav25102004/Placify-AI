@@ -13,37 +13,24 @@ Covers PR Portal and Student Portal at the level of "what problem does this solv
 
 ## High-Level Overview
 
-### Phase 2 — PR Portal ("Placement Management System")
-Placement Representatives (PRs) each manage a fixed batch of ~50 students through the placement pipeline. Where the Teacher Portal is about *verifying documents*, the PR Portal is about *tracking a pipeline and communicating with students* — a different access pattern (operational dashboard, not document review).
+### Phase 2 & 3 Evolution — PR-Managed Student Pipeline & Faculty Validation Architecture
 
-Known needs:
-- **My Batch Dashboard** — a PR sees only their assigned 50 students, with a visual pipeline: Document Received → Processing → Verified → Placed.
-- **Batch stats** — placement rate, highest/average package, company-wise breakdown, scoped to that PR's batch only.
-- **Student tracker** — list of all 50 students, status, company, package, per-student actions.
-- **PR-initiated upload** — a PR can also upload offer letters for their batch's students (reuses the Teacher Portal's upload/extraction pipeline, not a separate one).
-- **Messaging** — bulk WhatsApp/email to unplaced students in the batch.
-- **Referral tracking** — which seniors referred which juniors within the PR's batch.
-- **Event management** — scheduling mock interviews/prep sessions, attendance tracking.
+The system connects two main portal categories with designated stakeholders:
+1. **PR Management Module (Student Data & Cohorts Managed by PRs):**
+   - **No Student Accounts:** Students do **not** register or log in. Instead, their institutional information, graduation batch timelines, and placement tracking are entered and maintained directly by their assigned Placement Representative (PR).
+   - **Cohort Structure:** Each PR is assigned a tightly-scoped cohort of **~15 students**.
+   - **PR Document Ingestion:** The PR collects offer letters from students (internships, PPOs, full-time offers), uploads the documents directly from the PR Dashboard, and assigns the designated In-charge Faculty dynamically.
+   - **Cross-Cohort Directory & Placement History:** PRs and Coordinators can view campus placement outcomes, company packages, and senior/junior timelines across batches.
 
-**Why this needs Kafka (not needed in Phase 1):** when a teacher verifies a document, the PR overseeing that student's batch needs to see the pipeline update *immediately*, not on the next poll cycle. Phase 1's polling-based status model (see [`Frontend/architecture.md`](Frontend/architecture.md) Future Improvements) is sufficient for one portal reading its own writes, but a second portal reading another portal's writes in near-real-time is the actual justification for introducing an event bus — this is why Kafka is deferred to Phase 2 rather than added speculatively now.
+2. **Faculty Student Letter Validation Module:**
+   - **Audience:** Assigned In-charge Faculty and Placement Coordinators.
+   - **Auto-Extraction & Matching (7-Agent Pipeline):** Once the PR uploads a student's offer letter, the 7-Agent architecture extracts structured fields (company, compensation, role, joining date), performs authenticity and tampering checks, and auto-matches against the student record created by the PR.
+   - **Side-by-Side Review:** The In-charge Faculty validates the auto-matched data against the original letter in the Verification Workspace.
+   - **Strict Access Control:** The raw document is strictly visible only to the reviewing In-charge Faculty, the student's assigned PR, and Placement Coordinators.
+   - **Commit & Export:** Upon faculty approval, an immutable audit log is generated, and the finalized record pushes directly to the College ERP via REST API.
 
-**Why this needs Redis expansion:** PR dashboard stats (batch-wide aggregates, recomputed frequently) are a stronger caching candidate than anything in Phase 1's Teacher Portal, which reads mostly single-batch, single-teacher data.
-
-### Phase 3 — Student Portal ("Analytics & Networking Platform")
-Two very different user groups share one portal: **placed students** (manage their own profile, approve referral requests) and **junior students** (read-heavy: analytics, senior search, referral requests, salary prediction). This is the highest-traffic, most read-heavy portal (10,000+ juniors researching, per the product vision) and the first one that needs graph-shaped queries.
-
-Known needs:
-- **Placement analytics** — interactive charts: packages by company, internship/PPO/off-campus split, year-on-year trends, branch comparison.
-- **Company explorer** — click a company, see all placed seniors from it, required skills, interview experiences.
-- **Senior search** — filter by company, package, branch, year, skills.
-- **Connect / referral request** — junior requests a referral from a senior; senior gets a skill-match score and one-click approve/reject.
-- **Success paths** — a senior's skills → projects → internship → PPO → full-time timeline.
-- **Salary predictor** — given CGPA/skills/projects/internships, predicts an expected package range and target companies.
-- **Interview prep** — company-specific questions sourced from placed seniors' experiences, mock interview booking.
-
-**Why this needs Neo4j (not needed in Phase 1 or 2):** "which seniors match this junior's skills/interests" and "who referred whom" are graph-shaped questions — relational joins across `users`/`extractions` in PostgreSQL would work but get progressively more awkward as the matching logic grows (multi-hop: junior → skill overlap → senior → company → referral chain). A graph database is justified specifically by this query shape, not by scale alone.
-
-**Why this portal likely needs independent scaling / a service split:** 10,000+ juniors browsing read-heavy analytics is an order of magnitude more traffic than 220 teachers verifying documents, and it has a fundamentally different read/write ratio. This is the point at which the monolith-first approach in [`Backend/architecture.md`](Backend/architecture.md) Future Improvements explicitly anticipates a split becoming worth it.
+3. **Placement Coordinator Oversight:**
+   - Supervises all PR cohorts, manages In-charge Faculty assignments, monitors campus-wide company drives, resolves flagged discrepancies, and coordinates bulk ERP synchronization.
 
 ## Design Principles
 1. **This document is descriptive, not normative — the one exception in this tree.** Per [`AI/agents.md`](AI/agents.md) Rule 2, every other document is a contract to build against. This one is not: it exists to preview intent, and nothing here should be implemented as-is without first being turned into a real, reviewed domain document (its own `Documents/PR/` or `Documents/Student/` tree, following the Universal Document Template).

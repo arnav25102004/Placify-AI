@@ -1,0 +1,408 @@
+import React, { useState } from "react";
+import { UserRole } from "@/shared/types";
+import {
+  Shield,
+  LayoutGrid,
+  UploadCloud,
+  ArrowRightLeft,
+  Clock,
+  Settings,
+  HelpCircle,
+  Search,
+  Bell,
+  ChevronDown,
+  Menu,
+  X,
+  FileCheck2,
+  Users,
+  Building,
+  GraduationCap,
+  Sparkles,
+  Check
+} from "lucide-react";
+import { ThemeToggle } from "@/shared/components/ui/theme-toggle";
+import { Input } from "@/shared/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/components/ui/dropdown-menu";
+
+export interface NavItemConfig {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  badge?: string | number;
+}
+
+interface UserProfileConfig {
+  name: string;
+  email: string;
+  roleLabel: string;
+  initials: string;
+  avatarBg: string;
+}
+
+interface AppLayoutProps {
+  currentRole: UserRole;
+  onRoleChange: (role: UserRole) => void;
+  activeNavId: string;
+  onNavSelect: (navId: string) => void;
+  children: React.ReactNode;
+}
+
+export const AppLayout: React.FC<AppLayoutProps> = ({
+  currentRole,
+  onRoleChange,
+  activeNavId,
+  onNavSelect,
+  children,
+}) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState("");
+
+  // Role metadata config: navigation items tailored to each role
+  const roleNavItems: Record<UserRole, NavItemConfig[]> = {
+    faculty: [
+      { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
+      { id: "upload", label: "Upload Documents", icon: UploadCloud },
+      { id: "comparisons", label: "Comparisons", icon: ArrowRightLeft },
+      { id: "history", label: "History", icon: Clock },
+    ],
+    pr: [
+      { id: "pr_pipeline", label: "PR Pipeline", icon: Users },
+      { id: "cohort_15", label: "15 Students Cohort", icon: GraduationCap },
+      { id: "upload_requests", label: "Document Ingestion", icon: UploadCloud },
+      { id: "history", label: "Verification Log", icon: Clock },
+    ],
+    placement_coordinator: [
+      { id: "coordinator_drives", label: "Placement Drives", icon: Building },
+      { id: "erp_sync", label: "ERP & Audit Sync", icon: FileCheck2 },
+      { id: "comparisons", label: "Campus Analytics", icon: ArrowRightLeft },
+      { id: "history", label: "Master Records", icon: Clock },
+    ],
+    student: [
+      { id: "student_dashboard", label: "My Placements", icon: LayoutGrid },
+      { id: "upload", label: "Upload Offer Letter", icon: UploadCloud },
+      { id: "comparisons", label: "Senior Placements", icon: Sparkles },
+      { id: "history", label: "Status History", icon: Clock },
+    ],
+    admin: [
+      { id: "coordinator_drives", label: "Institutional Overview", icon: Building },
+      { id: "erp_sync", label: "ERP & Multi-Campus", icon: FileCheck2 },
+      { id: "history", label: "Audit Log", icon: Clock },
+    ],
+  };
+
+  // User profile representation per role
+  const roleProfiles: Record<UserRole, UserProfileConfig> = {
+    faculty: {
+      name: "Meera Iyer",
+      email: "teacher@example.com",
+      roleLabel: "Teacher",
+      initials: "MI",
+      avatarBg: "bg-purple-600 text-white",
+    },
+    pr: {
+      name: "Rohit Patel",
+      email: "pr.rohit@example.com",
+      roleLabel: "PR Representative",
+      initials: "RP",
+      avatarBg: "bg-amber-600 text-white",
+    },
+    placement_coordinator: {
+      name: "Prof. S. K. Roy",
+      email: "coordinator@example.com",
+      roleLabel: "Coordinator",
+      initials: "SR",
+      avatarBg: "bg-rose-600 text-white",
+    },
+    student: {
+      name: "Arnav Sharma",
+      email: "arnav.21cs042@example.com",
+      roleLabel: "Student",
+      initials: "AS",
+      avatarBg: "bg-blue-600 text-white",
+    },
+    admin: {
+      name: "Admin Controller",
+      email: "admin@placify.internal",
+      roleLabel: "Admin",
+      initials: "AC",
+      avatarBg: "bg-indigo-600 text-white",
+    },
+  };
+
+  const currentProfile = roleProfiles[currentRole] || roleProfiles.faculty;
+  const currentNavItems = roleNavItems[currentRole] || roleNavItems.faculty;
+
+  const handleRoleSwitch = (newRole: UserRole) => {
+    onRoleChange(newRole);
+    // Reset to default nav of that role
+    const newItems = roleNavItems[newRole];
+    if (newItems && newItems.length > 0) {
+      if (newRole === "faculty") {
+        onNavSelect("history"); // Default matches screenshot
+      } else {
+        onNavSelect(newItems[0].id);
+      }
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex antialiased">
+      {/* Mobile Drawer Backdrop */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-slate-950/60 z-40 lg:hidden backdrop-blur-xs transition-opacity"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Navigation */}
+      <aside
+        className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800/80 flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+          mobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+        }`}
+      >
+        {/* Top Part: Brand + Nav Items */}
+        <div className="flex flex-col flex-1 overflow-y-auto px-4 pt-5 pb-4">
+          {/* Brand Logo Header */}
+          <div className="flex items-center justify-between px-2 mb-6">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
+                <Shield className="w-4 h-4 fill-white" />
+              </div>
+              <span className="font-bold text-lg text-slate-900 dark:text-white tracking-tight">
+                Placify
+              </span>
+            </div>
+
+            {/* Mobile close button */}
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="lg:hidden p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Role Navigation Items */}
+          <nav className="space-y-1">
+            {currentNavItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeNavId === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    onNavSelect(item.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                    isActive
+                      ? "bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-semibold"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                  }`}
+                >
+                  <Icon
+                    className={`w-4 h-4 ${
+                      isActive
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-slate-400 dark:text-slate-500"
+                    }`}
+                  />
+                  <span className="truncate">{item.label}</span>
+                  {item.badge && (
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-bold">
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Bottom Part: Settings, Help & User Profile */}
+        <div className="p-4 border-t border-slate-200/80 dark:border-slate-800/80 space-y-3">
+          {/* Utilities */}
+          <div className="space-y-0.5">
+            <button
+              onClick={() => onNavSelect("settings")}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
+                activeNavId === "settings"
+                  ? "bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-semibold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+              }`}
+            >
+              <Settings className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+              <span>Settings</span>
+            </button>
+            <button
+              onClick={() => onNavSelect("help")}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
+                activeNavId === "help"
+                  ? "bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-semibold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+              }`}
+            >
+              <HelpCircle className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+              <span>Help & Support</span>
+            </button>
+          </div>
+
+          {/* User Profile Card matching mockup */}
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 flex items-center gap-3 px-1">
+            <div
+              className={`w-9 h-9 rounded-full ${currentProfile.avatarBg} flex items-center justify-center font-bold text-xs shrink-0 shadow-xs`}
+            >
+              {currentProfile.initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                {currentProfile.name}
+              </div>
+              <div className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
+                {currentProfile.email}
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Wrapper (shifted by sidebar width on desktop) */}
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
+          {/* Left: Mobile trigger & Search input */}
+          <div className="flex items-center gap-3 flex-1 max-w-md">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            {/* Top Search Bar */}
+            <div className="relative w-full">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Input
+                type="text"
+                value={globalSearch}
+                onChange={(e) => setGlobalSearch(e.target.value)}
+                placeholder="Search documents, students..."
+                className="w-full pl-9 pr-4 h-9 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl text-xs focus-visible:ring-1 focus-visible:ring-blue-500 placeholder:text-slate-400"
+              />
+            </div>
+          </div>
+
+          {/* Right: Theme Toggle, Bell & Role Dropdown */}
+          <div className="flex items-center gap-3 ml-4">
+            {/* Theme Toggle */}
+            <ThemeToggle />
+
+            {/* Notification Bell */}
+            <button className="relative p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 rounded-full ring-2 ring-white dark:ring-slate-950" />
+            </button>
+
+            {/* Role Selector Pill Dropdown matching mockup */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-colors cursor-pointer">
+                  <span
+                    className={`w-6 h-6 rounded-full ${currentProfile.avatarBg} flex items-center justify-center font-bold text-[10px]`}
+                  >
+                    {currentProfile.initials}
+                  </span>
+                  <span className="max-w-[90px] truncate">{currentProfile.roleLabel}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-60 p-1.5 shadow-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                <DropdownMenuLabel className="text-[10px] font-mono uppercase text-slate-400 px-2 py-1">
+                  Switch Role & Features
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+
+                <DropdownMenuItem
+                  onClick={() => handleRoleSwitch("faculty")}
+                  className="flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px] font-bold">
+                      MI
+                    </span>
+                    <div>
+                      <div className="font-semibold text-slate-900 dark:text-slate-100">Teacher / Faculty</div>
+                      <div className="text-[10px] text-slate-500">History, Verify & Uploads</div>
+                    </div>
+                  </div>
+                  {currentRole === "faculty" && <Check className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => handleRoleSwitch("pr")}
+                  className="flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 h-6 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px] font-bold">
+                      RP
+                    </span>
+                    <div>
+                      <div className="font-semibold text-slate-900 dark:text-slate-100">PR Hub</div>
+                      <div className="text-[10px] text-slate-500">15 Students Cohort & Pipeline</div>
+                    </div>
+                  </div>
+                  {currentRole === "pr" && <Check className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => handleRoleSwitch("placement_coordinator")}
+                  className="flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center text-[10px] font-bold">
+                      SR
+                    </span>
+                    <div>
+                      <div className="font-semibold text-slate-900 dark:text-slate-100">Placement Coordinator</div>
+                      <div className="text-[10px] text-slate-500">Campus Drives & ERP Sync</div>
+                    </div>
+                  </div>
+                  {currentRole === "placement_coordinator" && <Check className="w-4 h-4 text-rose-600 dark:text-rose-400" />}
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => handleRoleSwitch("student")}
+                  className="flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">
+                      AS
+                    </span>
+                    <div>
+                      <div className="font-semibold text-slate-900 dark:text-slate-100">Student View</div>
+                      <div className="text-[10px] text-slate-500">Placements & Offer Upload</div>
+                    </div>
+                  </div>
+                  {currentRole === "student" && <Check className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
+
+        {/* Main Work Area */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1440px] w-full mx-auto">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+};

@@ -12,7 +12,17 @@ Defines how teachers log in, how sessions are maintained, and how access is scop
 Covers Teacher Portal authentication only — single role (`teacher`) for Phase 1. Does NOT cover PR or Student portal roles (not yet designed) or ERP-side authentication (covered in [`api.md`](api.md) as part of the export contract).
 
 ## High-Level Overview
-Login uses email + password against the `users` table (bcrypt-hashed passwords), issuing a JWT on success. Every subsequent request carries that JWT; FastAPI middleware validates it and injects the authenticated `teacher_id` and `campus_id` into the request context, which every query then filters by server-side.
+Authentication uses email + password against the `users` table (bcrypt-hashed passwords), issuing a signed JWT on success. Every request carries that JWT; FastAPI middleware validates it and injects the authenticated `user_id`, `role`, and `campus_id` into the request context.
+
+### Extensible Role-Based Access Control (RBAC)
+User permissions are managed strictly via an extensible `role` system. When new user types or elevated privileges are added, a new role is provisioned and assigned without breaking the core architecture:
+- `student`: Standard student (timeline setup, campus placement discovery, offer letter upload upon request).
+- `pr`: Placement Representative (elevated student managing assigned cohort, issuing upload requests, dynamic faculty assignment).
+- `faculty`: Standard faculty / mentor (in-charge verification workspace, auto-matched document validation).
+- `placement_coordinator`: Placement Coordinator (elevated faculty managing in-charge assignments, campus drive broadcast requests, exception approvals, College ERP sync).
+- `admin`: System-level campus administrator.
+
+Each role has declarative permission scopes enforced at the service and query layers. Adding future roles (e.g. `recruiter`, `alumni_mentor`, `dean`) simply registers a new role identifier and associated permission mappings.
 
 ## Design Principles
 1. **Server-side scoping, not client-trust.** A teacher's `teacher_id`/`campus_id` come from the validated JWT, never from a request parameter or body field — a malicious or buggy client cannot query another teacher's batches by passing a different ID.

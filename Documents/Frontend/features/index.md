@@ -12,9 +12,13 @@ Covers Teacher Portal features only. PR Portal and Student Portal features do no
 ## High-Level Overview
 | Feature | Document | Primary Users | Primary Data Source |
 |---|---|---|---|
-| Batch upload | [`batch-upload.md`](batch-upload.md) | Teachers | `POST /batches` |
-| Verification workspace | [`verification-workspace.md`](verification-workspace.md) | Teachers | `GET /documents/{id}`, `POST /documents/{id}/verify` |
-| Dashboard | [`dashboard.md`](dashboard.md) | Teachers | `GET /batches` |
+| Student Dashboard & Timeline | [`student-dashboard.md`](student-dashboard.md) | Students | `GET /users/profile`, `GET /placements/history` |
+| Student Request Upload | [`request-upload.md`](request-upload.md) | Students | `GET /document-requests/my`, `POST /document-requests/{id}/upload` |
+| PR Pipeline Management | [`pr-pipeline.md`](pr-pipeline.md) | PRs | `GET /pr/pipeline`, `POST /document-requests` |
+| Verification workspace | [`verification-workspace.md`](verification-workspace.md) | In-charge Faculty | `GET /faculty/queue`, `GET /documents/{id}`, `POST /documents/{id}/verify` |
+| Faculty Dashboard | [`dashboard.md`](dashboard.md) | Faculty / Mentors | `GET /batches`, `GET /faculty/queue` |
+| Coordinator Central Dashboard | [`coordinator-dashboard.md`](coordinator-dashboard.md) | Placement Coordinators | `GET /coordinator/drives`, `POST /coordinator/assign-faculty`, `POST /batches/export` |
+| Batch upload | [`batch-upload.md`](batch-upload.md) | Faculty / Coordinators | `POST /batches` |
 
 ## Design Principles
 1. **One feature, one document.** A feature never shares a file with another unrelated feature, even if small — this table is the map that keeps that rule enforceable.

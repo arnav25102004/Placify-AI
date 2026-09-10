@@ -1,0 +1,1 @@
+export { FacultyVerificationWorkspacePage } from "./workspace";

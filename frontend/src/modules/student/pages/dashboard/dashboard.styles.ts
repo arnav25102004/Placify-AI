@@ -1,0 +1,16 @@
+export const studentDashboardStyles = {
+  container: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8",
+  headerBanner: "relative overflow-hidden bg-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-md border border-slate-800",
+  headerAccentGlow: "absolute -right-20 -top-20 w-80 h-80 bg-blue-600/20 rounded-full blur-3xl pointer-events-none",
+  headerInner: "relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6",
+  quickStatsGrid: "grid grid-cols-2 sm:grid-cols-4 gap-4",
+  statBox: "bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm hover:shadow transition-shadow",
+  sectionHeader: "flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-gray-100",
+  sectionTitle: "text-lg font-bold text-gray-900 tracking-tight flex items-center gap-2.5",
+  requestCard: "bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:border-blue-200 hover:shadow-md transition-all",
+  tableCard: "bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden",
+  tableHeader: "bg-gray-50/80 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase tracking-wider",
+  searchBar: "flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-700 w-full sm:w-64 focus-within:ring-2 focus-within:ring-blue-500 focus-within:bg-white transition-all",
+  modalOverlay: "fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4",
+  modalContent: "bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 border border-gray-100",
+} as const;

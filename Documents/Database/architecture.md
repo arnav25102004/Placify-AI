@@ -14,12 +14,17 @@ Defines the schema, table responsibilities, and integrity rules for the Teacher 
 Covers PostgreSQL schema and integrity rules. Does NOT cover index-level tuning detail (see [`indexing.md`](indexing.md)) or migration process (see [`migrations.md`](migrations.md)). Neo4j (student-networking graph DB) is out of scope entirely — it belongs to the not-yet-designed Student Portal.
 
 ## High-Level Overview
-Five tables for Phase 1: `users`, `batches`, `documents`, `extractions`, `audit_logs`. The original product spec named four tables and omitted `batches` — that omission would have made "recent batches" and per-batch status queries (both named Frontend features) impossible to implement cleanly, so `batches` is added here as a first-class table.
+Six core tables (per ADR-005, ADR-007, ADR-008): `users`, `students`, `batches`, `documents`, `extractions`, `audit_logs`. Students do not hold user login accounts; they are managed entities under their assigned PR (1 PR per ~15 students).
 
 ```
-users ──┬─< batches ──< documents ──< extractions
-        │                   │
-        └───────────────────┴─< audit_logs
+users (roles: pr, faculty, placement_coordinator, admin)
+  ├──< students (managed 15-student cohort per PR; timeline, profile, status)
+  │         │
+  │         └──< documents (PR-uploaded offer letter in Drive, hash, status) ──< extractions
+  │                   │
+  ├──< batches (bulk upload sessions)
+  │
+  └───────────────────┴─< audit_logs (append-only, faculty actions)
 ```
 
 ## Design Principles

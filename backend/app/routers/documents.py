@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from app.database import get_db
 from app.dependencies.auth import get_current_teacher
@@ -14,15 +15,27 @@ router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
 
 
 def _get_owned_document(document_id: int, teacher: User, db: Session) -> Document:
-    document = (
+    # Check if document belongs to a batch created by the teacher
+    doc_via_batch = (
         db.query(Document)
         .join(Batch, Document.batch_id == Batch.id)
         .filter(Document.id == document_id, Batch.teacher_id == teacher.id)
         .first()
     )
-    if document is None:
-        raise HTTPException(status_code=404, detail="Document not found")
-    return document
+    if doc_via_batch:
+        return doc_via_batch
+
+    # Check if document is a student self-submission from same campus
+    doc_via_student = (
+        db.query(Document)
+        .join(User, Document.student_id == User.id)
+        .filter(Document.id == document_id, User.campus_id == teacher.campus_id)
+        .first()
+    )
+    if doc_via_student:
+        return doc_via_student
+
+    raise HTTPException(status_code=404, detail="Document not found")
 
 
 @router.get("/{document_id}", response_model=DocumentDetail)
@@ -42,6 +55,9 @@ def get_document(
         id=document.id,
         status=document.status,
         drive_view_link=document.drive_view_link,
+        submission_source=document.submission_source,
+        student_id=document.student_id,
+        batch_id=document.batch_id,
         extraction=extraction,
     )
 

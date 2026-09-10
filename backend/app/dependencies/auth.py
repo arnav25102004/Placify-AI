@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models.user import User
 
 
-def get_current_teacher(
+def get_current_user(
     authorization: str = Header(...),
     db: Session = Depends(get_db),
 ) -> User:
@@ -25,4 +25,20 @@ def get_current_teacher(
     if user is None:
         raise HTTPException(status_code=401, detail="User no longer exists")
 
+    return user
+
+
+def get_current_teacher(
+    user: User = Depends(get_current_user),
+) -> User:
+    if user.role not in ("teacher", "admin"):
+        raise HTTPException(status_code=403, detail="Forbidden: Teacher access required")
+    return user
+
+
+def get_current_student(
+    user: User = Depends(get_current_user),
+) -> User:
+    if user.role != "student":
+        raise HTTPException(status_code=403, detail="Forbidden: Student access required")
     return user

@@ -1,12 +1,14 @@
 from decimal import Decimal
 from typing import Optional
-
 from pydantic import BaseModel
 
 
 class DocumentStatus(BaseModel):
     id: int
     status: str
+    submission_source: Optional[str] = "teacher_batch"
+    student_id: Optional[int] = None
+    batch_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -28,6 +30,9 @@ class DocumentDetail(BaseModel):
     id: int
     status: str
     drive_view_link: str
+    submission_source: Optional[str] = "teacher_batch"
+    student_id: Optional[int] = None
+    batch_id: Optional[int] = None
     extraction: Optional[ExtractionDetail]
 
     class Config:

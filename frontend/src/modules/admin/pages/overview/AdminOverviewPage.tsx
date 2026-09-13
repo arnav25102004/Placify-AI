@@ -115,20 +115,20 @@ export const AdminOverviewPage: React.FC<AdminOverviewPageProps> = ({ onNavigate
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div
-            onClick={() => onNavigate("faculty_workspace")}
+            onClick={() => onNavigate("comparisons")}
             className="group p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500/50 dark:hover:border-purple-500/50 rounded-2xl cursor-pointer transition-all hover:shadow-md"
           >
             <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
               <Sparkles className="w-5 h-5" />
             </div>
             <h3 className="font-semibold text-sm text-slate-900 dark:text-white group-hover:text-purple-600 transition-colors">
-              7-Agent Verification
+              Compare Document
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Inspect OCR discrepancies, SHA-256 tamper logs, and approve student offer letters.
+              Side-by-side offer letter preview, extracted field review, and confidence scoring.
             </p>
             <div className="mt-4 flex items-center gap-1 text-xs font-medium text-purple-600">
-              Launch Workspace <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              Open Compare <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
 

@@ -72,11 +72,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const roleNavItems: Record<UserRole, NavItemConfig[]> = {
     // 1. Teacher / Faculty — Document verification, batch uploads, discrepancy comparisons & verification history
     faculty: [
-      { id: "dashboard", label: "Dashboard", icon: LayoutGrid, badge: "Overview" },
-      { id: "upload", label: "Upload Documents", icon: UploadCloud, badge: "Batch" },
+      { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
+      { id: "upload", label: "Upload Documents", icon: UploadCloud },
       { id: "comparisons", label: "Comparisons", icon: ArrowRightLeft },
-      { id: "history", label: "History", icon: Clock, badge: 142 },
-      { id: "workspace", label: "Verification Workspace", icon: Sparkles, badge: "AI Ready" },
+      { id: "history", label: "History", icon: Clock },
     ],
     // 2. PR Hub — Cohort of 15 assigned students, ingestion requests, PR pipeline
     pr: [
@@ -101,7 +100,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     // 5. Admin — UNRESTRICTED FULL ROOT ACCESS across all subsystems
     admin: [
       { id: "admin_overview", label: "Admin Console", icon: ShieldAlert, badge: "Root", section: "Governance" },
-      { id: "faculty_workspace", label: "7-Agent Workspace", icon: Sparkles, badge: "AI", section: "Governance" },
+      { id: "comparisons", label: "Compare Document", icon: ArrowRightLeft, badge: "Verify", section: "Governance" },
       { id: "history", label: "Global Doc History", icon: Clock, badge: 892, section: "Governance" },
       { id: "coordinator_drives", label: "Drives & Placements", icon: Building, section: "Institutional" },
       { id: "pr_pipeline", label: "PR 1:15 Cohorts", icon: Users, badge: 74, section: "Institutional" },

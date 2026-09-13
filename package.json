@@ -1,0 +1,12 @@
+{
+  "name": "placify-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Placify AI placement platform",
+  "scripts": {
+    "dev:all": "docker compose up --build",
+    "dev:all:local": "./run.sh",
+    "dev:frontend": "pnpm --filter placify-frontend dev",
+    "dev:down": "docker compose down"
+  }
+}

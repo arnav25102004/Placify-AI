@@ -26,10 +26,10 @@ export const App: React.FC = () => {
       switch (activeNavId) {
         case "admin_overview":
           return <AdminOverviewPage onNavigate={(target) => setActiveNavId(target)} />;
-        case "faculty_workspace":
-          return <FacultyVerificationWorkspacePage />;
+        case "comparisons":
+          return <CompareDocumentPage onBack={() => setActiveNavId("admin_overview")} />;
         case "history":
-          return <DocumentHistoryPage onOpenWorkspace={() => setActiveNavId("faculty_workspace")} />;
+          return <DocumentHistoryPage onOpenWorkspace={() => setActiveNavId("comparisons")} />;
         case "coordinator_drives":
         case "erp_sync":
           return <CoordinatorDrivesPage />;
@@ -96,28 +96,28 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Quick Jump to Verification Workspace */}
+              {/* Quick Jump to Comparison / Verification */}
               <div className="bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-transparent border border-blue-200/60 dark:border-blue-900/40 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    <h3 className="font-semibold text-slate-900 dark:text-white">Active Verification Queue</h3>
+                    <h3 className="font-semibold text-slate-900 dark:text-white">Active Document Review Queue</h3>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                    Arnav Sharma's Google PPO (32.5 LPA) has passed 7-agent pre-checks and is ready for final sign-off.
+                    Arjun Kumar's TechNova Internship Offer (₹20,000/mo) is ready for side-by-side comparison & verification.
                   </p>
                 </div>
                 <Button
                   size="sm"
-                  onClick={() => setActiveNavId("workspace")}
+                  onClick={() => setActiveNavId("comparisons")}
                   className="bg-blue-600 hover:bg-blue-700 text-white shrink-0 gap-2"
                 >
-                  Open Verification Workspace <ArrowRight className="w-4 h-4" />
+                  Open Compare Document <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
 
               {/* Embedded Document History table */}
-              <DocumentHistoryPage onOpenWorkspace={() => setActiveNavId("workspace")} />
+              <DocumentHistoryPage onOpenWorkspace={() => setActiveNavId("comparisons")} />
             </div>
           );
         case "upload":
@@ -155,10 +155,8 @@ export const App: React.FC = () => {
           );
         case "comparisons":
           return <CompareDocumentPage onBack={() => setActiveNavId("dashboard")} />;
-        case "workspace":
-          return <FacultyVerificationWorkspacePage />;
         default:
-          return <DocumentHistoryPage onOpenWorkspace={() => setActiveNavId("workspace")} />;
+          return <DocumentHistoryPage onOpenWorkspace={() => setActiveNavId("comparisons")} />;
       }
     }
 

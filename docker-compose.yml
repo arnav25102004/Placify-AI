@@ -6,9 +6,76 @@ services:
       POSTGRES_PASSWORD: placify_dev_password
       POSTGRES_DB: placify
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U placify -d placify"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://placify:placify_dev_password@postgres:5432/placify
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET=placify-dev-secret-key-32-chars-long!
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-dev_key}
+      - GOOGLE_DRIVE_FOLDER_ID=${GOOGLE_DRIVE_FOLDER_ID:-}
+      - GOOGLE_DRIVE_CREDENTIALS_PATH=${GOOGLE_DRIVE_CREDENTIALS_PATH:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: ["celery", "-A", "app.celery_app.celery_app", "worker", "--loglevel=info"]
+    environment:
+      - DATABASE_URL=postgresql://placify:placify_dev_password@postgres:5432/placify
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET=placify-dev-secret-key-32-chars-long!
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-dev_key}
+      - GOOGLE_DRIVE_FOLDER_ID=${GOOGLE_DRIVE_FOLDER_ID:-}
+      - GOOGLE_DRIVE_CREDENTIALS_PATH=${GOOGLE_DRIVE_CREDENTIALS_PATH:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      api:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000/api/v1
+    depends_on:
+      - api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
 
 volumes:
   postgres_data:

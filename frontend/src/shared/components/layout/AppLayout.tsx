@@ -242,26 +242,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             </button>
           </div>
 
-          {/* Active Role Identifier Pill */}
-          {!isCollapsed ? (
-            <div className="px-1 animate-in fade-in duration-200">
-              <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-                    {currentProfile.roleLabel}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex justify-center px-1" title={currentProfile.roleLabel}>
-              <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-center">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              </div>
-            </div>
-          )}
-
           {/* Role Navigation Items */}
           <nav className="space-y-1">
             {currentNavItems.map((item) => {

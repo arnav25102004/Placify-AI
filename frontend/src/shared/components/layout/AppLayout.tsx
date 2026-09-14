@@ -152,7 +152,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       roleLabel: "PR Representative",
       initials: "RP",
       avatarBg: "bg-amber-600 text-white",
-      roleSubtitle: "PR Cohort A (15 Students)",
+      roleSubtitle: "PR Cohort (Program Managed)",
     },
     placement_coordinator: {
       name: "Prof. S. K. Roy",
@@ -525,7 +525,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     </span>
                     <div>
                       <div className="font-semibold text-slate-900 dark:text-slate-100">PR Hub</div>
-                      <div className="text-[10px] text-slate-500">15 Students Cohort & Pipeline</div>
+                      <div className="text-[10px] text-slate-500">Program Cohorts & PR Pipeline</div>
                     </div>
                   </div>
                   {currentRole === "pr" && <Check className="w-4 h-4 text-amber-600 dark:text-amber-400" />}

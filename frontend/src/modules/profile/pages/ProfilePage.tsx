@@ -146,16 +146,93 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
     "English (Professional Native)",
     "German (A2 Intermediate)",
   ]);
-  const [newCompetency, setNewCompetency] = useState("");
+  interface SocialLinkItem {
+    id: string;
+    platform: string;
+    url: string;
+    isCustom?: boolean;
+  }
 
-  // Slide-over Drawers State
-  const [activeDrawer, setActiveDrawer] = useState<"resume" | "project" | "endorsements" | null>(null);
-  const [selectedProject, setSelectedProject] = useState<CapstoneProject | null>(null);
+  const [socialLinks, setSocialLinks] = useState<SocialLinkItem[]>([
+    { id: "s-linkedin", platform: "LinkedIn", url: formData.linkedin_url || "https://linkedin.com/in/arnav-placify" },
+    { id: "s-github", platform: "GitHub", url: formData.github_url || "https://github.com/arnav-dev" },
+    { id: "s-leetcode", platform: "LeetCode", url: "https://leetcode.com/u/arnav-dev" },
+    { id: "s-codechef", platform: "CodeChef", url: "https://codechef.com/users/arnav_21" },
+    { id: "s-kaggle", platform: "Kaggle", url: "https://kaggle.com/arnavdev" },
+    { id: "s-twitter", platform: "X / Twitter", url: "https://x.com/arnav_dev" },
+  ]);
+  const [customPlatformName, setCustomPlatformName] = useState("");
+  const [customPlatformUrl, setCustomPlatformUrl] = useState("");
+  const [showAddPlatform, setShowAddPlatform] = useState(false);
+
+  // Helper to extract domain or first letter
+  const getPlatformInitial = (platformName: string, urlStr: string) => {
+    if (platformName && platformName.trim()) {
+      return platformName.trim()[0].toUpperCase();
+    }
+    try {
+      const parsed = new URL(urlStr.startsWith("http") ? urlStr : `https://${urlStr}`);
+      const hostname = parsed.hostname.replace("www.", "");
+      return hostname[0].toUpperCase();
+    } catch {
+      return urlStr ? urlStr[0].toUpperCase() : "#";
+    }
+  };
+
+  const getPlatformBadgeColor = (initial: string) => {
+    const colors = [
+      "bg-maroon-900 text-white",
+      "bg-blue-600 text-white",
+      "bg-amber-600 text-white",
+      "bg-emerald-600 text-white",
+      "bg-indigo-600 text-white",
+      "bg-purple-600 text-white",
+      "bg-rose-600 text-white",
+      "bg-cyan-600 text-white",
+    ];
+    const code = initial.charCodeAt(0) || 0;
+    return colors[code % colors.length];
+  };
+
+  const handleAddSocialLink = () => {
+    if (!customPlatformUrl.trim()) return;
+    let name = customPlatformName.trim();
+    if (!name) {
+      try {
+        const parsed = new URL(customPlatformUrl.startsWith("http") ? customPlatformUrl : `https://${customPlatformUrl}`);
+        name = parsed.hostname.replace("www.", "").split(".")[0];
+        name = name.charAt(0).toUpperCase() + name.slice(1);
+      } catch {
+        name = "Web";
+      }
+    }
+    const newId = `s-${Date.now()}`;
+    setSocialLinks([...socialLinks, { id: newId, platform: name, url: customPlatformUrl.trim(), isCustom: true }]);
+    setCustomPlatformName("");
+    setCustomPlatformUrl("");
+    setShowAddPlatform(false);
+  };
+
+  const handleRemoveSocialLink = (id: string) => {
+    setSocialLinks(socialLinks.filter((s) => s.id !== id));
+  };
+
+  const handleUpdateSocialUrl = (id: string, newUrl: string) => {
+    setSocialLinks(socialLinks.map((s) => (s.id === id ? { ...s, url: newUrl } : s)));
+    if (id === "s-linkedin") setFormData((prev) => ({ ...prev, linkedin_url: newUrl }));
+    if (id === "s-github") setFormData((prev) => ({ ...prev, github_url: newUrl }));
+  };
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+
+  const [newCompetency, setNewCompetency] = useState("");
+
+  // Slide-over Drawers State
+  const [activeDrawer, setActiveDrawer] = useState<"resume" | "project" | "endorsements" | null>(null);
+  const [selectedProject, setSelectedProject] = useState<CapstoneProject | null>(null);
 
   // Calendar / Scheduling State
   const [selectedDay, setSelectedDay] = useState<number>(25);
@@ -540,61 +617,129 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
             )}
           </div>
 
-          {/* Bento Card: Verified Social Footprints */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-3">
-            <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-              Verified Profiles
+          {/* Bento Card: Verified Multi-Platform Footprints */}
+          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                Connected Platforms ({socialLinks.length})
+              </div>
+              {isEditing && (
+                <button
+                  onClick={() => setShowAddPlatform(!showAddPlatform)}
+                  className="text-[11px] font-bold text-maroon-900 dark:text-maroon-300 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Platform</span>
+                </button>
+              )}
             </div>
 
-            {isEditing ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Linkedin className="w-4 h-4 text-maroon-900 dark:text-maroon-300 shrink-0" />
+            {/* In-line Add Platform Dialog / Form */}
+            {isEditing && showAddPlatform && (
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 space-y-2.5 animate-in fade-in">
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Add Custom Profile Platform
+                </div>
+                <div className="space-y-1.5">
                   <input
                     type="text"
-                    placeholder="LinkedIn URL"
-                    value={formData.linkedin_url}
-                    onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs font-mono"
+                    placeholder="Platform Name (e.g. Behance, Devpost, Medium)"
+                    value={customPlatformName}
+                    onChange={(e) => setCustomPlatformName(e.target.value)}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-maroon-900 focus:outline-hidden"
                   />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Github className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" />
                   <input
-                    type="text"
-                    placeholder="GitHub URL"
-                    value={formData.github_url}
-                    onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs font-mono"
+                    type="url"
+                    placeholder="Profile URL (e.g. https://behance.net/username)"
+                    value={customPlatformUrl}
+                    onChange={(e) => setCustomPlatformUrl(e.target.value)}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-mono focus:ring-1 focus:ring-maroon-900 focus:outline-hidden"
                   />
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                {formData.linkedin_url && (
-                  <a
-                    href={formData.linkedin_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:text-maroon-900 dark:hover:text-white flex items-center gap-1.5 text-xs font-semibold"
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setShowAddPlatform(false)}
+                    className="h-7 px-2.5 text-xs"
                   >
-                    <Linkedin className="w-3.5 h-3.5 text-maroon-900 dark:text-maroon-300" />
-                    <span>LinkedIn</span>
-                  </a>
-                )}
-                {formData.github_url && (
-                  <a
-                    href={formData.github_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:text-maroon-900 dark:hover:text-white flex items-center gap-1.5 text-xs font-semibold"
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleAddSocialLink}
+                    className="h-7 px-3 text-xs bg-maroon-900 hover:bg-maroon-800 text-white rounded-xl font-bold"
                   >
-                    <Github className="w-3.5 h-3.5" />
-                    <span>GitHub</span>
-                  </a>
-                )}
+                    Add Platform
+                  </Button>
+                </div>
               </div>
             )}
+
+            {/* List of Platforms */}
+            <div className="space-y-2">
+              {socialLinks.map((link) => {
+                const initial = getPlatformInitial(link.platform, link.url);
+                const badgeColor = getPlatformBadgeColor(initial);
+
+                return isEditing ? (
+                  <div key={link.id} className="flex items-center gap-2 group">
+                    {/* First letter domain initial badge */}
+                    <div
+                      className={`w-7 h-7 rounded-xl ${badgeColor} flex items-center justify-center font-black text-xs shrink-0 shadow-2xs`}
+                      title={link.platform}
+                    >
+                      {initial}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 truncate">
+                        {link.platform}
+                      </div>
+                      <input
+                        type="text"
+                        value={link.url}
+                        onChange={(e) => handleUpdateSocialUrl(link.id, e.target.value)}
+                        placeholder={`https://${link.platform.toLowerCase()}.com/...`}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs font-mono focus:ring-1 focus:ring-maroon-900 focus:outline-hidden"
+                      />
+                    </div>
+                    <button
+                      onClick={() => handleRemoveSocialLink(link.id)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer mt-3"
+                      title={`Remove ${link.platform}`}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <a
+                    key={link.id}
+                    href={link.url.startsWith("http") ? link.url : `https://${link.url}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-800 transition-colors group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {/* First letter domain initial badge */}
+                      <div
+                        className={`w-7 h-7 rounded-xl ${badgeColor} flex items-center justify-center font-black text-xs shrink-0 shadow-2xs group-hover:scale-105 transition-transform`}
+                      >
+                        {initial}
+                      </div>
+                      <div className="truncate">
+                        <div className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-maroon-900 dark:group-hover:text-maroon-300 transition-colors">
+                          {link.platform}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono truncate max-w-[170px]">
+                          {link.url.replace(/^https?:\/\//, "")}
+                        </div>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-maroon-900 dark:group-hover:text-maroon-300 shrink-0 ml-2" />
+                  </a>
+                );
+              })}
+            </div>
           </div>
         </div>
 

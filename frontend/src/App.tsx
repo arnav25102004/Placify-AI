@@ -316,6 +316,101 @@ export const App: React.FC = () => {
     return <DocumentHistoryPage onOpenWorkspace={() => setActiveNavId("workspace")} />;
   };
 
+  // Map path to active nav id
+  useEffect(() => {
+    const p = location.pathname;
+    if (p === "/profile") setActiveNavId("profile");
+    else if (p === "/dev-db" || p === "/dev_db") setActiveNavId("dev_db");
+    else if (p === "/student" || p === "/student-portal") setActiveNavId("student_dashboard");
+    else if (p === "/seniors") setActiveNavId("seniors");
+    else if (p === "/companies") setActiveNavId("companies");
+    else if (p === "/dashboard") setActiveNavId("dashboard");
+    else if (p === "/upload") setActiveNavId("upload");
+    else if (p === "/comparisons") setActiveNavId("comparisons");
+    else if (p === "/history") setActiveNavId("history");
+    else if (p === "/pr-pipeline") setActiveNavId("pr_pipeline");
+    else if (p === "/cohort-15") setActiveNavId("cohort_15");
+    else if (p === "/coordinator-drives") setActiveNavId("coordinator_drives");
+    else if (p === "/erp-sync") setActiveNavId("erp_sync");
+    else if (p === "/admin" || p === "/admin-overview") setActiveNavId("admin_overview");
+    else if (p === "/settings") setActiveNavId("settings");
+    else if (p === "/help") setActiveNavId("help");
+    else if (p === "/") {
+      // Default based on role
+      if (currentRole === "student") setActiveNavId("student_dashboard");
+      else if (currentRole === "faculty") setActiveNavId("history");
+      else if (currentRole === "admin") setActiveNavId("admin_overview");
+      else if (currentRole === "pr") setActiveNavId("pr_pipeline");
+      else if (currentRole === "placement_coordinator") setActiveNavId("coordinator_drives");
+    }
+  }, [location.pathname, currentRole]);
+
+  const handleNavSelect = (navId: string) => {
+    setActiveNavId(navId);
+    switch (navId) {
+      case "profile":
+        navigate("/profile");
+        break;
+      case "dev_db":
+        navigate("/dev-db");
+        break;
+      case "student_dashboard":
+        navigate("/student");
+        break;
+      case "seniors":
+        navigate("/seniors");
+        break;
+      case "companies":
+        navigate("/companies");
+        break;
+      case "dashboard":
+        navigate("/dashboard");
+        break;
+      case "upload":
+        navigate("/upload");
+        break;
+      case "comparisons":
+        navigate("/comparisons");
+        break;
+      case "history":
+        navigate("/history");
+        break;
+      case "pr_pipeline":
+        navigate("/pr-pipeline");
+        break;
+      case "cohort_15":
+        navigate("/cohort-15");
+        break;
+      case "coordinator_drives":
+        navigate("/coordinator-drives");
+        break;
+      case "erp_sync":
+        navigate("/erp-sync");
+        break;
+      case "admin_overview":
+        navigate("/admin");
+        break;
+      case "settings":
+        navigate("/settings");
+        break;
+      case "help":
+        navigate("/help");
+        break;
+      default:
+        navigate("/");
+        break;
+    }
+  };
+
+  const getRoleDefaultRoute = (role: UserRole) => {
+    if (role === "student") return "/student";
+    if (role === "faculty") return "/history";
+    if (role === "admin") return "/admin";
+    if (role === "pr") return "/pr-pipeline";
+    if (role === "placement_coordinator") return "/coordinator-drives";
+    return "/student";
+  };
+
   return (
     <ThemeProvider defaultTheme="dark" storageKey="placify-ui-theme">
       <Routes>
@@ -323,12 +418,14 @@ export const App: React.FC = () => {
           path="/login"
           element={
             isAuthenticated ? (
-              <Navigate to="/" replace />
+              <Navigate to={getRoleDefaultRoute(currentRole)} replace />
             ) : (
               <LoginPage onLoginSuccess={handleLoginSuccess} />
             )
           }
         />
+
+        {/* Authenticated Application with URL Routes */}
         <Route
           path="/*"
           element={
@@ -339,19 +436,150 @@ export const App: React.FC = () => {
                 currentRole={currentRole}
                 onRoleChange={(newRole) => {
                   setCurrentRole(newRole);
-                  if (newRole === "faculty") setActiveNavId("history");
-                  else if (newRole === "admin") setActiveNavId("admin_overview");
-                  else if (newRole === "pr") setActiveNavId("pr_pipeline");
-                  else if (newRole === "placement_coordinator") setActiveNavId("coordinator_drives");
-                  else if (newRole === "student") setActiveNavId("student_dashboard");
+                  const target = getRoleDefaultRoute(newRole);
+                  navigate(target);
                 }}
                 activeNavId={activeNavId}
-                onNavSelect={setActiveNavId}
+                onNavSelect={handleNavSelect}
                 onLogout={handleLogout}
                 userEmail={currentUser?.email}
                 userProgram={currentUser?.program}
               >
-                {renderContent()}
+                <Routes>
+                  {/* Default root redirects to role home */}
+                  <Route path="/" element={<Navigate to={getRoleDefaultRoute(currentRole)} replace />} />
+
+                  {/* Universal Profile Page */}
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProfilePage
+                        user={currentUser}
+                        onProfileUpdated={(updated) => {
+                          setCurrentUser(updated);
+                          api.setUser(updated);
+                        }}
+                      />
+                    }
+                  />
+
+                  {/* Universal Test DB Studio */}
+                  <Route path="/dev-db" element={<DatabaseStudioPage />} />
+                  <Route path="/dev_db" element={<Navigate to="/dev-db" replace />} />
+
+                  {/* Student Routes */}
+                  <Route path="/student" element={<StudentDashboardPage />} />
+                  <Route path="/seniors" element={<SeniorsPage />} />
+                  <Route
+                    path="/companies"
+                    element={<PreviousCompaniesPage onNavigateToSeniors={() => navigate("/seniors")} />}
+                  />
+
+                  {/* Faculty & Verification Routes */}
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                              Faculty Dashboard
+                            </h1>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                              Overview of department placement verifications and student offer statuses.
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => navigate("/history")}
+                            className="bg-maroon-900 hover:bg-maroon-800 text-white gap-2"
+                          >
+                            <FileCheck2 className="w-4 h-4" /> View Document History
+                          </Button>
+                        </div>
+                        <DocumentHistoryPage onOpenWorkspace={() => navigate("/comparisons")} />
+                      </div>
+                    }
+                  />
+                  <Route
+                    path="/history"
+                    element={<DocumentHistoryPage onOpenWorkspace={() => navigate("/comparisons")} />}
+                  />
+                  <Route
+                    path="/upload"
+                    element={
+                      <div className="space-y-6">
+                        <div>
+                          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                            Batch Upload Documents
+                          </h1>
+                          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                            Upload multiple student offer letters or employment agreements for automated placement verification.
+                          </p>
+                        </div>
+                        <div className="border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-2xl p-12 text-center bg-white dark:bg-slate-900/50 hover:border-maroon-900 transition-colors">
+                          <div className="w-16 h-16 mx-auto rounded-2xl bg-maroon-50 dark:bg-maroon-950/60 text-maroon-900 dark:text-maroon-300 flex items-center justify-center mb-4">
+                            <UploadCloud className="w-8 h-8" />
+                          </div>
+                          <h3 className="font-semibold text-slate-900 dark:text-white text-base">
+                            Drag and drop student offer letters
+                          </h3>
+                          <div className="mt-6 flex items-center justify-center gap-3">
+                            <Button className="bg-maroon-900 hover:bg-maroon-800 text-white text-xs">
+                              Browse Files
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => navigate("/history")} className="text-xs">
+                              View History
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  />
+                  <Route path="/comparisons" element={<CompareDocumentPage onBack={() => navigate("/dashboard")} />} />
+
+                  {/* PR Pipeline Routes */}
+                  <Route path="/pr-pipeline" element={<PRPipelinePage />} />
+                  <Route path="/cohort-15" element={<PRPipelinePage />} />
+
+                  {/* Placement Coordinator Routes */}
+                  <Route path="/coordinator-drives" element={<CoordinatorDrivesPage />} />
+                  <Route path="/erp-sync" element={<CoordinatorDrivesPage />} />
+
+                  {/* Admin Routes */}
+                  <Route
+                    path="/admin"
+                    element={<AdminOverviewPage onNavigate={(target) => handleNavSelect(target)} />}
+                  />
+                  <Route path="/admin-overview" element={<Navigate to="/admin" replace />} />
+
+                  {/* Settings & Help */}
+                  <Route
+                    path="/settings"
+                    element={
+                      <div className="space-y-6">
+                        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Settings</h1>
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+                          <p className="text-sm text-slate-500">Preferences, role delegation, and notification settings.</p>
+                        </div>
+                      </div>
+                    }
+                  />
+                  <Route
+                    path="/help"
+                    element={
+                      <div className="space-y-6">
+                        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Help & Support</h1>
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+                          <p className="text-sm text-slate-500">Need assistance with placement verification, PR cohorts or ERP exports? Contact university placement support.</p>
+                        </div>
+                      </div>
+                    }
+                  />
+
+                  {/* Catch-all redirect */}
+                  <Route path="*" element={<Navigate to={getRoleDefaultRoute(currentRole)} replace />} />
+                </Routes>
               </AppLayout>
             )
           }

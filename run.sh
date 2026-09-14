@@ -26,7 +26,7 @@ PYTHONPATH=. python3 -m app.seed 2>/dev/null || echo "Database checked."
 
 # 3. Start FastAPI backend
 echo "Starting Backend (FastAPI on port 8000)..."
-PYTHONPATH=. uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+PYTHONPATH=. uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload &
 BACKEND_PID=$!
 
 cd "$ROOT_DIR"

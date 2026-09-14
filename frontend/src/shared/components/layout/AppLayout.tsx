@@ -243,7 +243,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           </div>
 
           {/* Role Navigation Items */}
-          <nav className="space-y-1">
+          <nav className="space-y-1.5">
             {currentNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeNavId === item.id;
@@ -255,31 +255,27 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     setMobileMenuOpen(false);
                   }}
                   title={isCollapsed ? item.label : undefined}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-medium transition-all cursor-pointer relative group ${
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all duration-200 cursor-pointer relative group ${
                     isCollapsed ? "justify-center px-2" : ""
                   } ${
                     isActive
-                      ? "bg-maroon-50 dark:bg-maroon-950/60 text-maroon-900 dark:text-maroon-200 font-bold shadow-2xs border border-maroon-200/80 dark:border-maroon-900/60"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                      ? "bg-maroon-900 dark:bg-maroon-600 text-white shadow-md shadow-maroon-900/25 dark:shadow-maroon-600/30"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60"
                   }`}
                 >
-                  {/* Subtle active left pill bar */}
-                  {isActive && !isCollapsed && (
-                    <span className="absolute left-0 top-2 bottom-2 w-1 bg-maroon-900 dark:bg-maroon-400 rounded-r-full" />
-                  )}
                   <Icon
                     className={`w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110 ${
                       isActive
-                        ? "text-maroon-900 dark:text-maroon-300"
-                        : "text-slate-400 dark:text-slate-500"
+                        ? "text-white fill-white stroke-[2.4]"
+                        : "text-slate-400 dark:text-slate-500 fill-transparent"
                     }`}
                   />
                   {!isCollapsed && <span className="truncate">{item.label}</span>}
                   {!isCollapsed && item.badge && (
                     <span
-                      className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                      className={`ml-auto text-[10px] px-2 py-0.5 rounded-full font-bold font-mono ${
                         isActive
-                          ? "bg-maroon-100 dark:bg-maroon-950 text-maroon-900 dark:text-maroon-200"
+                          ? "bg-white/20 text-white"
                           : "bg-slate-100 dark:bg-slate-800 text-slate-500"
                       }`}
                     >
@@ -320,29 +316,29 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             <button
               onClick={() => onNavSelect("settings")}
               title={isCollapsed ? "Settings" : undefined}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-2xl text-xs font-medium cursor-pointer transition-colors ${
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-2xl text-xs font-semibold cursor-pointer transition-all duration-200 ${
                 isCollapsed ? "justify-center px-2" : ""
               } ${
                 activeNavId === "settings"
-                  ? "bg-maroon-50 dark:bg-maroon-950/60 text-maroon-900 dark:text-maroon-200 font-semibold"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                  ? "bg-maroon-900 dark:bg-maroon-600 text-white shadow-md shadow-maroon-900/25"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60"
               }`}
             >
-              <Settings className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+              <Settings className={`w-4 h-4 shrink-0 ${activeNavId === "settings" ? "text-white fill-white stroke-[2.4]" : "text-slate-400 dark:text-slate-500"}`} />
               {!isCollapsed && <span>Settings</span>}
             </button>
             <button
               onClick={() => onNavSelect("help")}
               title={isCollapsed ? "Help & Support" : undefined}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-2xl text-xs font-medium cursor-pointer transition-colors ${
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-2xl text-xs font-semibold cursor-pointer transition-all duration-200 ${
                 isCollapsed ? "justify-center px-2" : ""
               } ${
                 activeNavId === "help"
-                  ? "bg-maroon-50 dark:bg-maroon-950/60 text-maroon-900 dark:text-maroon-200 font-semibold"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                  ? "bg-maroon-900 dark:bg-maroon-600 text-white shadow-md shadow-maroon-900/25"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/60"
               }`}
             >
-              <HelpCircle className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+              <HelpCircle className={`w-4 h-4 shrink-0 ${activeNavId === "help" ? "text-white fill-white stroke-[2.4]" : "text-slate-400 dark:text-slate-500"}`} />
               {!isCollapsed && <span>Help & Support</span>}
             </button>
           </div>
@@ -350,22 +346,26 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           {/* User Profile Card button (The primary profile opener) */}
           <div
             onClick={() => onNavSelect("profile")}
-            className={`pt-2 border-t border-slate-100 dark:border-slate-800/60 flex items-center gap-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/60 p-2 rounded-2xl transition-colors group ${
+            className={`pt-2 border-t border-slate-100 dark:border-slate-800/60 flex items-center gap-3 cursor-pointer p-2 rounded-2xl transition-all duration-200 group ${
               isCollapsed ? "justify-center p-1.5" : ""
-            } ${activeNavId === "profile" ? "ring-2 ring-maroon-900/40 bg-maroon-50/50 dark:bg-maroon-950/30" : ""}`}
+            } ${
+              activeNavId === "profile"
+                ? "bg-maroon-900 dark:bg-maroon-600 text-white shadow-md shadow-maroon-900/25 ring-2 ring-maroon-900/30"
+                : "hover:bg-slate-100 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200"
+            }`}
             title="Open Profile Page"
           >
             <div
-              className={`w-9 h-9 rounded-2xl ${currentProfile.avatarBg} flex items-center justify-center font-bold text-xs shrink-0 shadow-xs ring-2 ring-transparent group-hover:ring-maroon-900/40 transition-all`}
+              className={`w-9 h-9 rounded-2xl ${activeNavId === "profile" ? "bg-white text-maroon-900 shadow-sm font-black" : currentProfile.avatarBg} flex items-center justify-center text-xs shrink-0 shadow-xs ring-2 ring-transparent group-hover:ring-maroon-900/40 transition-all`}
             >
               {currentProfile.initials}
             </div>
             {!isCollapsed && (
               <div className="min-w-0 flex-1">
-                <div className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-maroon-900 dark:group-hover:text-maroon-300 transition-colors">
+                <div className={`text-xs font-bold truncate transition-colors ${activeNavId === "profile" ? "text-white" : "text-slate-900 dark:text-white group-hover:text-maroon-900 dark:group-hover:text-maroon-300"}`}>
                   {currentProfile.name}
                 </div>
-                <div className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
+                <div className={`text-[11px] truncate ${activeNavId === "profile" ? "text-white/80" : "text-slate-400 dark:text-slate-500"}`}>
                   {userEmail || currentProfile.email}
                 </div>
               </div>

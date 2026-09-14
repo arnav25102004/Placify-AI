@@ -8,8 +8,6 @@ import {
   Phone,
   Mail,
   Edit3,
-  Calendar as CalendarIcon,
-  Clock,
   Sparkles,
   CheckCircle2,
   AlertCircle,
@@ -21,12 +19,11 @@ import {
   Eye,
   Camera,
   RotateCcw,
-  ShieldCheck,
-  Check,
-  Upload,
   User,
-  Layers,
-  Zap
+  Zap,
+  Check,
+  Plus,
+  Trash2,
 } from "lucide-react";
 
 interface ProfilePageProps {
@@ -36,56 +33,55 @@ interface ProfilePageProps {
 
 const AVATAR_PRESETS = [
   {
-    name: "Faculty Reviewer",
-    url: "https://images.unsplash.com/photo-1594824813593-c90a1f0a8241?auto=format&fit=crop&q=80&w=900",
+    name: "Dr. Emily Chen Style (HealthRate)",
+    url: "https://images.unsplash.com/photo-1594824813593-c90a1f0a8241?auto=format&fit=crop&q=80&w=1000",
   },
   {
-    name: "Professor",
-    url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=900",
+    name: "Faculty Reviewer",
+    url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=1000",
   },
   {
     name: "Student Candidate",
-    url: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=900",
+    url: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=1000",
   },
   {
-    name: "Research Lead",
-    url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=900",
+    name: "Engineering Lead",
+    url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=1000",
   },
 ];
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated }) => {
-  const [isEditing, setIsEditing] = useState<boolean>(true); // Default to editable so user can edit right away
+  const [isEditing, setIsEditing] = useState<boolean>(true);
   const [formData, setFormData] = useState<UpdateProfilePayload>({
-    full_name: user?.full_name || (user?.role === "student" ? "Arnav Sharma" : "Dr. Mary Issac, Ph.D."),
-    phone: user?.phone || "+91 (080) 4012-9100",
-    department: user?.department || (user?.role === "student" ? "Computer Science & Engineering" : "School of Engineering & Technology"),
+    full_name: user?.full_name || (user?.role === "student" ? "Arnav Sharma" : "Dr. Emily Chen, MD"),
+    phone: user?.phone || "(212) 555-7890",
+    department: user?.department || (user?.role === "student" ? "COMPUTER SCIENCE & ENGINEERING" : "INTERNAL MEDICINE, CARDIOLOGY"),
     designation: user?.designation || (user?.role === "student" ? "Final Year B.Tech Placement Candidate" : "Associate Professor & Senior Verification Reviewer"),
     bio: user?.bio || (user?.role === "student"
       ? "Arnav Sharma is praised for strong algorithmic problem-solving, distributed systems mastery, and clear technical communication. Consistently ranks top 5% in placement cohorts with an active PPO offer."
-      : "Dr. Mary Issac is praised for verification precision, prompt compliance reviews, and clear discrepancy resolution. Students and placement coordinators value her edge-case fraud audits and fast approval turnaround."),
-    avatar_url: user?.avatar_url || "https://images.unsplash.com/photo-1594824813593-c90a1f0a8241?auto=format&fit=crop&q=80&w=900",
-    linkedin_url: user?.linkedin_url || "https://linkedin.com/in/faculty-reviewer",
+      : "Dr. Emily Chen is praised for professionalism, empathy, and clear explanations. Patients and coordinators value her cardiology expertise and easy booking. Some note rare communication delays."),
+    avatar_url: user?.avatar_url || "https://images.unsplash.com/photo-1594824813593-c90a1f0a8241?auto=format&fit=crop&q=80&w=1000",
+    linkedin_url: user?.linkedin_url || "https://linkedin.com/in/emily-chen-cardiology",
     github_url: user?.github_url || "https://github.com/placify-lead",
   });
 
-  const [skills, setSkills] = useState<string[]>([
-    "Full-Stack Architecture & Verification Audits",
-    "Distributed Systems & ERP Integration",
-    "English (Institutional / Native)",
+  const [location, setLocation] = useState<string>("New York, NY, Manhattan Health Associates");
+  const [competencies, setCompetencies] = useState<string[]>([
+    "English (Native)",
+    "Spanish (Fluent)",
   ]);
-  const [newSkillInput, setNewSkillInput] = useState("");
+  const [newCompetency, setNewCompetency] = useState("");
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
-  // Scheduling State
+  // Calendar / Scheduling State matching reference
   const [selectedDay, setSelectedDay] = useState<number>(25);
   const [selectedTime, setSelectedTime] = useState<string>("11:00 AM");
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
-  // Sync state when user prop changes
   useEffect(() => {
     if (user) {
       setFormData((prev) => ({
@@ -114,7 +110,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
       if (onProfileUpdated) {
         onProfileUpdated(updated);
       }
-      setTimeout(() => setSaveSuccess(false), 5000);
+      setTimeout(() => setSaveSuccess(false), 4000);
     } catch (err: any) {
       setErrorMessage(err.message || "Failed to update profile. Please try again.");
     } finally {
@@ -123,44 +119,39 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
   };
 
   const handleResetDefaults = () => {
-    setFormData({
-      full_name: user?.full_name || (user?.role === "student" ? "Arnav Sharma" : "Dr. Mary Issac, Ph.D."),
-      phone: user?.phone || "+91 (080) 4012-9100",
-      department: user?.department || (user?.role === "student" ? "Computer Science & Engineering" : "School of Engineering & Technology"),
-      designation: user?.designation || (user?.role === "student" ? "Final Year B.Tech Placement Candidate" : "Associate Professor & Senior Verification Reviewer"),
-      bio: user?.bio || "",
-      avatar_url: user?.avatar_url || AVATAR_PRESETS[0].url,
-      linkedin_url: user?.linkedin_url || "https://linkedin.com",
-      github_url: user?.github_url || "https://github.com",
-    });
+    if (confirm("Reset to default profile values?")) {
+      setFormData({
+        full_name: user?.role === "student" ? "Arnav Sharma" : "Dr. Emily Chen, MD",
+        phone: "(212) 555-7890",
+        department: user?.role === "student" ? "COMPUTER SCIENCE & ENGINEERING" : "INTERNAL MEDICINE, CARDIOLOGY",
+        designation: user?.role === "student" ? "Final Year Placement Candidate" : "Associate Professor & Senior Verification Reviewer",
+        bio: user?.role === "student"
+          ? "Arnav Sharma is praised for strong algorithmic problem-solving, distributed systems mastery, and clear technical communication."
+          : "Dr. Emily Chen is praised for professionalism, empathy, and clear explanations. Patients and coordinators value her cardiology expertise and easy booking. Some note rare communication delays.",
+        avatar_url: "https://images.unsplash.com/photo-1594824813593-c90a1f0a8241?auto=format&fit=crop&q=80&w=1000",
+        linkedin_url: "https://linkedin.com/in/emily-chen-cardiology",
+        github_url: "https://github.com/placify-lead",
+      });
+      setLocation("New York, NY, Manhattan Health Associates");
+    }
+  };
+
+  const addCompetency = () => {
+    if (newCompetency.trim() && !competencies.includes(newCompetency.trim())) {
+      setCompetencies([...competencies, newCompetency.trim()]);
+      setNewCompetency("");
+    }
+  };
+
+  const removeCompetency = (index: number) => {
+    setCompetencies(competencies.filter((_, i) => i !== index));
   };
 
   const generateAiBio = () => {
-    const roleName = user?.role || "faculty";
-    const name = formData.full_name || "Profile Owner";
-    const dept = formData.department || "Engineering";
-    if (roleName === "student") {
-      setFormData((prev) => ({
-        ...prev,
-        bio: `${name} is a high-performing student in ${dept} recognized for strong algorithmic problem-solving, clean code craftsmanship, and distributed systems design. Valued by interviewers for clear architectural communication and high readiness.`,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        bio: `${name} (${dept}) is praised for institutional diligence, swift document verification, and zero-defect ERP compliance. Known for identifying salary/role discrepancies and facilitating streamlined placement audits.`,
-      }));
-    }
-  };
-
-  const addSkill = () => {
-    if (newSkillInput.trim() && !skills.includes(newSkillInput.trim())) {
-      setSkills([...skills, newSkillInput.trim()]);
-      setNewSkillInput("");
-    }
-  };
-
-  const removeSkill = (index: number) => {
-    setSkills(skills.filter((_, i) => i !== index));
+    const roleName = formData.designation || "Senior Specialist";
+    const deptName = formData.department || "Internal Medicine";
+    const generated = `${formData.full_name || "Specialist"} is celebrated for outstanding expertise in ${deptName}, delivering disciplined accuracy and rapid turnaround. Peers and reviewers value their clinical rigor and prompt feedback across complex audit pipelines.`;
+    setFormData((prev) => ({ ...prev, bio: generated }));
   };
 
   const daysInWeek = [
@@ -177,14 +168,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
   const afternoonSlots = ["12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM"];
 
   return (
-    <div className="max-w-[1360px] mx-auto py-2 sm:py-6 space-y-6 text-slate-900 dark:text-slate-100">
-      {/* Toast Alert Banner */}
+    <div className="max-w-[1380px] mx-auto py-2 sm:py-6 px-3 sm:px-6 space-y-6 text-slate-900 dark:text-slate-100 font-sans antialiased">
+      {/* Toast Alert */}
       {saveSuccess && (
-        <div className="fixed top-5 right-5 z-50 p-4 rounded-2xl bg-[#D4F436] text-slate-950 font-semibold shadow-2xl border border-[#b6f000] flex items-center gap-3 animate-in slide-in-from-top-4 text-xs">
+        <div className="fixed top-5 right-5 z-50 p-4 rounded-2xl bg-[#D4F436] text-slate-950 font-bold shadow-2xl border border-[#b6f000] flex items-center gap-3 animate-in slide-in-from-top-4 text-xs">
           <CheckCircle2 className="w-5 h-5 text-slate-950" />
           <div>
-            <div className="font-bold">Profile Saved</div>
-            <div className="text-[11px] text-slate-800">Your changes were successfully synced to the database.</div>
+            <div className="font-extrabold text-sm">Profile Saved</div>
+            <div className="text-[11px] text-slate-800">Your profile changes were successfully updated.</div>
           </div>
         </div>
       )}
@@ -199,36 +190,35 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
         </div>
       )}
 
-      {/* Top Controls Bar: Edit / Preview Switcher & Save Button */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Top Banner & Mode Toggle */}
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-2xl bg-maroon-50 dark:bg-maroon-950/60 text-maroon-900 dark:text-maroon-300 flex items-center justify-center font-bold">
             <User className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="font-bold text-slate-900 dark:text-white text-base leading-none">
-                {formData.full_name || "User Profile"}
+              <h2 className="font-bold text-slate-900 dark:text-white text-base leading-tight">
+                {formData.full_name || "Profile"}
               </h2>
-              <Badge variant="outline" className="text-[10px] font-mono">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-maroon-100 dark:bg-maroon-950 text-maroon-900 dark:text-maroon-200 font-bold">
                 {user?.role?.toUpperCase() || "FACULTY"}
-              </Badge>
+              </span>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               {isEditing
-                ? "Interactive Edit Mode: Click on any field below to update details in real time."
-                : "Public View Mode: Showing how your profile appears to peers and coordinators."}
+                ? "Direct In-Place Editing: Click and modify any text field, avatar, or competency below."
+                : "Public View Mode: Viewing the clean HealthRate design presentation."}
             </p>
           </div>
         </div>
 
-        {/* Action Buttons: Toggle Mode & Save */}
+        {/* Action Controls */}
         <div className="flex items-center gap-2.5">
-          {/* Mode Toggle Pills */}
-          <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs">
+          <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs">
             <button
               onClick={() => setIsEditing(false)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
                 !isEditing
                   ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs"
                   : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
@@ -239,9 +229,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
             </button>
             <button
               onClick={() => setIsEditing(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
                 isEditing
-                  ? "bg-blue-600 text-white shadow-xs"
+                  ? "bg-maroon-900 text-white shadow-xs"
                   : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
@@ -250,12 +240,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
             </button>
           </div>
 
-          {/* Save Profile Button with Lime Accent */}
           <Button
             size="sm"
             onClick={() => handleSaveProfile()}
             disabled={isSaving}
-            className="h-9 px-4 rounded-xl bg-[#D4F436] hover:bg-[#c2e428] text-slate-950 font-black text-xs gap-1.5 shadow-sm transition-transform active:scale-98 cursor-pointer"
+            className="h-9 px-4 rounded-2xl bg-[#D4F436] hover:bg-[#c2e428] text-slate-950 font-black text-xs gap-1.5 shadow-sm transition-transform active:scale-98 cursor-pointer"
           >
             <Save className="w-3.5 h-3.5" />
             {isSaving ? "Saving..." : "Save Profile"}
@@ -263,39 +252,50 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
         </div>
       </div>
 
-      {/* Main 3-Column Profile Grid matching HealthRate Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* ================= COLUMN 1: PORTRAIT & CONTACT DETAILS (3.5 cols) ================= */}
+      {/* Main 3-Column Layout exactly mirroring HealthRate reference */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+        {/* =========================================================================
+            COLUMN 1: BIG PROMINENT PORTRAIT PHOTO & CONTACT INFO (4 COLS)
+            ========================================================================= */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Portrait Photo Frame */}
-          <div className="relative rounded-3xl overflow-hidden bg-[#F4EFE6] dark:bg-slate-800/80 aspect-4/5 shadow-xs border border-slate-200/80 dark:border-slate-800 flex items-center justify-center group">
+          {/* Big Portrait Container: Prominent ~560px height with warm background matching Emily Chen */}
+          <div className="relative w-full h-[480px] sm:h-[560px] rounded-[32px] overflow-hidden bg-[#ECE6DC] dark:bg-[#201d1c] shadow-md border border-stone-200/80 dark:border-stone-800 flex items-center justify-center group">
             <img
               src={formData.avatar_url || AVATAR_PRESETS[0].url}
               alt={formData.full_name}
-              className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-102"
+              className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-103"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = AVATAR_PRESETS[0].url;
               }}
             />
 
-            {/* Editable Camera Overlay */}
+            {/* Editable Camera Overlay Button */}
             {isEditing && (
-              <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4 text-white">
+              <div className="absolute inset-0 bg-slate-950/30 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-end p-6">
                 <Button
                   size="sm"
                   onClick={() => setShowAvatarPicker(!showAvatarPicker)}
-                  className="bg-white/90 hover:bg-white text-slate-950 font-bold text-xs rounded-xl shadow-lg gap-1.5"
+                  className="bg-white/95 hover:bg-white text-slate-950 font-bold text-xs rounded-2xl shadow-xl gap-2 backdrop-blur-xs px-4 py-2"
                 >
-                  <Camera className="w-3.5 h-3.5 text-blue-600" /> Change Portrait
+                  <Camera className="w-4 h-4 text-maroon-900" />
+                  <span>Change Portrait Photo</span>
                 </Button>
               </div>
             )}
           </div>
 
-          {/* Quick Avatar URL Picker Dropdown / Box */}
+          {/* Quick Avatar Picker Dialog */}
           {showAvatarPicker && isEditing && (
-            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-3 animate-in fade-in">
-              <div className="text-xs font-bold text-slate-900 dark:text-white">Choose Preset Avatar</div>
+            <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-3 animate-in fade-in">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold text-slate-900 dark:text-white">Choose Preset Avatar</div>
+                <button
+                  onClick={() => setShowAvatarPicker(false)}
+                  className="text-xs text-slate-400 hover:text-slate-600"
+                >
+                  ✕
+                </button>
+              </div>
               <div className="grid grid-cols-4 gap-2">
                 {AVATAR_PRESETS.map((preset, idx) => (
                   <button
@@ -304,135 +304,154 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                       setFormData({ ...formData, avatar_url: preset.url });
                       setShowAvatarPicker(false);
                     }}
-                    className="rounded-xl overflow-hidden aspect-square border-2 hover:border-blue-500 focus:border-blue-500 transition-all cursor-pointer"
+                    className="rounded-2xl overflow-hidden aspect-square border-2 border-transparent hover:border-maroon-900 focus:border-maroon-900 transition-all cursor-pointer shadow-xs"
+                    title={preset.name}
                   >
                     <img src={preset.url} alt={preset.name} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
-              <div className="space-y-1 pt-1">
-                <label className="text-[10px] text-slate-400 font-semibold uppercase">Or Custom Image URL</label>
-                <Input
-                  type="text"
-                  placeholder="https://..."
-                  value={formData.avatar_url}
-                  onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
-                  className="h-8 rounded-lg text-xs"
-                />
+              <div className="space-y-1.5 pt-1">
+                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                  Or Custom Photo URL
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="https://images.unsplash.com/..."
+                    value={formData.avatar_url}
+                    onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
+                    className="h-8 rounded-xl text-xs"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => setShowAvatarPicker(false)}
+                    className="h-8 px-3 text-xs bg-maroon-900 hover:bg-maroon-800 text-white rounded-xl"
+                  >
+                    Set
+                  </Button>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Contact Details List */}
-          <div className="space-y-3 px-1 text-xs text-slate-600 dark:text-slate-300">
+          {/* Contact Details List matching HealthRate clean iconography */}
+          <div className="space-y-3 px-1 text-sm text-slate-700 dark:text-slate-300">
             {/* Location */}
-            <div className="flex items-start gap-2.5">
-              <MapPin className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0 mt-0.5" />
+            <div className="flex items-center gap-3">
+              <MapPin className="w-4 h-4 text-slate-900 dark:text-slate-200 shrink-0 stroke-[2.2]" />
               {isEditing ? (
-                <Input
+                <input
                   type="text"
-                  value="Bangalore Main Campus, Christ University, Hosur Road"
-                  readOnly
-                  className="h-8 rounded-xl bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-800 text-xs"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Location / Organization"
+                  className="w-full bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-maroon-900 focus:outline-hidden"
                 />
               ) : (
-                <span>Bangalore Main Campus, Christ University, Hosur Road</span>
+                <span className="text-xs font-medium text-slate-800 dark:text-slate-200">{location}</span>
               )}
             </div>
 
             {/* Phone */}
-            <div className="flex items-center gap-2.5">
-              <Phone className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+            <div className="flex items-center gap-3">
+              <Phone className="w-4 h-4 text-slate-900 dark:text-slate-200 shrink-0 stroke-[2.2]" />
               {isEditing ? (
-                <Input
+                <input
                   type="text"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+91 (080) 4012-9100"
-                  className="h-8 rounded-xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-xs focus:ring-blue-500"
+                  placeholder="(212) 555-7890"
+                  className="w-full bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-maroon-900 focus:outline-hidden font-mono"
                 />
               ) : (
-                <span>{formData.phone || "+91 (080) 4012-9100"}</span>
+                <span className="text-xs font-medium text-slate-800 dark:text-slate-200 font-mono">
+                  {formData.phone || "(212) 555-7890"}
+                </span>
               )}
             </div>
 
             {/* Email */}
-            <div className="flex items-center gap-2.5">
-              <Mail className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
-              <span>{user?.email || "faculty@placify.internal"}</span>
-              <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-semibold font-mono">
-                VERIFIED
+            <div className="flex items-center gap-3">
+              <Mail className="w-4 h-4 text-slate-900 dark:text-slate-200 shrink-0 stroke-[2.2]" />
+              <span className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
+                {user?.email || "drchen@gmail.com"}
               </span>
             </div>
 
-            {/* Skills & Competencies */}
-            <div className="pt-3 border-t border-slate-200/70 dark:border-slate-800 space-y-2 text-slate-500 dark:text-slate-400">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Core Competencies & Languages
+            {/* Competencies / Languages Bullet List */}
+            <div className="pt-3 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold tracking-wider uppercase text-slate-400">
+                  Languages & Competencies
+                </span>
               </div>
-              <div className="space-y-1.5">
-                {skills.map((skill, sIdx) => (
-                  <div key={sIdx} className="flex items-center justify-between gap-2 text-xs">
+              <ul className="space-y-1.5 pl-1">
+                {competencies.map((comp, idx) => (
+                  <li key={idx} className="flex items-center justify-between text-slate-700 dark:text-slate-300">
                     <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                      <span className="text-slate-700 dark:text-slate-300">{skill}</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-900 dark:bg-slate-300" />
+                      <span>{comp}</span>
                     </div>
                     {isEditing && (
                       <button
-                        onClick={() => removeSkill(sIdx)}
-                        className="text-slate-400 hover:text-rose-500 cursor-pointer"
+                        onClick={() => removeCompetency(idx)}
+                        className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                         title="Remove"
                       >
                         ✕
                       </button>
                     )}
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
 
               {isEditing && (
-                <div className="flex items-center gap-1.5 pt-1">
-                  <Input
+                <div className="flex items-center gap-2 pt-1">
+                  <input
                     type="text"
-                    placeholder="Add competency (e.g. Spanish (Fluent))..."
-                    value={newSkillInput}
-                    onChange={(e) => setNewSkillInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && addSkill()}
-                    className="h-8 rounded-xl text-xs bg-slate-50 dark:bg-slate-800"
+                    placeholder="Add item (e.g. French)..."
+                    value={newCompetency}
+                    onChange={(e) => setNewCompetency(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && addCompetency()}
+                    className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs focus:ring-1 focus:ring-maroon-900 focus:outline-hidden"
                   />
-                  <Button size="sm" onClick={addSkill} className="h-8 px-2.5 text-xs bg-slate-800 text-white">
+                  <Button
+                    size="sm"
+                    onClick={addCompetency}
+                    className="h-7 px-2.5 rounded-lg bg-maroon-900 hover:bg-maroon-800 text-white text-[11px]"
+                  >
                     Add
                   </Button>
                 </div>
               )}
             </div>
 
-            {/* Social / Portfolio Links */}
-            <div className="pt-3 border-t border-slate-200/70 dark:border-slate-800 space-y-2">
+            {/* Social / Portfolio Profiles */}
+            <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800 space-y-2">
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Professional Profiles
+                Professional Links
               </div>
-
               {isEditing ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Linkedin className="w-4 h-4 text-blue-600 shrink-0" />
-                    <Input
+                    <Linkedin className="w-4 h-4 text-maroon-900 dark:text-maroon-300 shrink-0" />
+                    <input
                       type="text"
-                      placeholder="https://linkedin.com/in/username"
+                      placeholder="https://linkedin.com/in/..."
                       value={formData.linkedin_url}
                       onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
-                      className="h-8 text-xs rounded-xl bg-slate-50 dark:bg-slate-800"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs"
                     />
                   </div>
                   <div className="flex items-center gap-2">
                     <Github className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" />
-                    <Input
+                    <input
                       type="text"
-                      placeholder="https://github.com/username"
+                      placeholder="https://github.com/..."
                       value={formData.github_url}
                       onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
-                      className="h-8 text-xs rounded-xl bg-slate-50 dark:bg-slate-800"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs"
                     />
                   </div>
                 </div>
@@ -443,9 +462,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                       href={formData.linkedin_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-blue-600 hover:underline flex items-center gap-1.5"
+                      className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:text-maroon-900 dark:hover:text-white flex items-center gap-1.5 text-xs font-semibold"
                     >
-                      <Linkedin className="w-4 h-4" />
+                      <Linkedin className="w-3.5 h-3.5 text-maroon-900 dark:text-maroon-300" />
                       <span>LinkedIn</span>
                     </a>
                   )}
@@ -454,9 +473,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                       href={formData.github_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:underline flex items-center gap-1.5"
+                      className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:text-maroon-900 dark:hover:text-white flex items-center gap-1.5 text-xs font-semibold"
                     >
-                      <Github className="w-4 h-4" />
+                      <Github className="w-3.5 h-3.5" />
                       <span>GitHub</span>
                     </a>
                   )}
@@ -466,80 +485,70 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
           </div>
         </div>
 
-        {/* ================= COLUMN 2: EDITABLE NAME, AI SUMMARY, RATINGS & CHARTS (5 cols) ================= */}
+        {/* =========================================================================
+            COLUMN 2: NAME, AI SUMMARY, RATINGS & DATA VISUALIZATIONS (5 COLS)
+            ========================================================================= */}
         <div className="lg:col-span-5 space-y-7">
-          {/* Header Name & Department (Editable on page) */}
-          <div className="space-y-1.5">
+          {/* Header Title & Department */}
+          <div className="space-y-1">
             {isEditing ? (
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Full Name & Title
-                </label>
-                <Input
-                  type="text"
-                  value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  placeholder="e.g. Dr. Emily Chen, MD"
-                  className="text-2xl font-bold h-11 rounded-2xl bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
-                />
-
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Department & Specialty
-                </label>
-                <Input
-                  type="text"
-                  value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  placeholder="e.g. INTERNAL MEDICINE, CARDIOLOGY"
-                  className="text-xs uppercase tracking-wider font-semibold h-9 rounded-xl bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
-                />
-
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Institutional Role / Designation
-                </label>
-                <Input
-                  type="text"
-                  value={formData.designation}
-                  onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                  placeholder="e.g. Associate Professor & Placement Reviewer"
-                  className="text-xs h-9 rounded-xl bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
-                />
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Full Name & Credential
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                    placeholder="e.g. Dr. Emily Chen, MD"
+                    className="w-full text-3xl sm:text-4xl font-black text-slate-900 dark:text-white bg-transparent border-b-2 border-maroon-900/30 focus:border-maroon-900 focus:outline-hidden py-1 tracking-tight"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Department / Specialty (Uppercase)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.department}
+                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                    placeholder="INTERNAL MEDICINE, CARDIOLOGY"
+                    className="w-full text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-transparent border-b border-slate-200 dark:border-slate-700 py-1 focus:outline-hidden"
+                  />
+                </div>
               </div>
             ) : (
               <div>
                 <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                  {formData.full_name || "Profile Name"}
+                  {formData.full_name || "Dr. Emily Chen, MD"}
                 </h1>
-                <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 tracking-wider uppercase mt-1">
-                  {formData.department || "FACULTY REVIEW & AUDITS"}
-                </div>
-                <div className="text-xs text-slate-400 mt-0.5 font-medium">
-                  {formData.designation || "Lead Reviewer"}
+                <div className="text-[11px] font-bold tracking-widest text-slate-500 dark:text-slate-400 uppercase mt-1">
+                  {formData.department || "INTERNAL MEDICINE, CARDIOLOGY"}
                 </div>
               </div>
             )}
           </div>
 
-          {/* AI Summary Card with Signature Lime Badge (Editable Bio) */}
-          <div className="flex flex-col sm:flex-row items-stretch rounded-3xl overflow-hidden border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+          {/* AI Summary Card with Signature Lime #D4F436 Box */}
+          <div className="flex flex-col sm:flex-row items-stretch rounded-[24px] overflow-hidden border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
             {/* Left Lime Rating Badge */}
-            <div className="bg-[#D4F436] text-slate-950 p-5 sm:w-36 flex flex-col items-center justify-center text-center shrink-0">
-              <div className="text-4xl font-black tracking-tight leading-none">4.9</div>
-              <div className="text-xs font-bold mt-1 text-slate-900">48 reviews</div>
+            <div className="bg-[#D4F436] text-slate-950 p-6 sm:w-36 flex flex-col items-center justify-center text-center shrink-0">
+              <div className="text-4xl font-black tracking-tight leading-none">4.8</div>
+              <div className="text-xs font-bold mt-1 text-slate-900">38 reviews</div>
             </div>
 
-            {/* Right AI Summary Content */}
-            <div className="p-4 sm:p-5 flex-1 flex flex-col justify-center bg-white dark:bg-slate-900 space-y-2">
+            {/* Right AI Summary Content (Editable Bio) */}
+            <div className="p-5 flex-1 flex flex-col justify-center bg-white dark:bg-slate-900 space-y-2">
               <div className="flex items-center justify-between">
-                <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-[#8CBF00] dark:text-[#D4F436]" />
                   AI SUMMARY
                 </div>
-
                 {isEditing && (
                   <button
                     onClick={generateAiBio}
-                    className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] font-bold text-maroon-900 dark:text-maroon-300 hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <Zap className="w-3 h-3 text-amber-500" />
                     Auto-Generate
@@ -552,61 +561,61 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                   rows={4}
                   value={formData.bio}
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  placeholder="Enter or generate your professional AI summary bio..."
-                  className="w-full text-xs text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-3 focus:ring-1 focus:ring-blue-500 focus:outline-hidden"
+                  placeholder="Edit professional AI summary..."
+                  className="w-full text-xs text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl p-3 focus:ring-1 focus:ring-maroon-900 focus:outline-hidden leading-relaxed"
                 />
               ) : (
-                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-normal">
                   {formData.bio}
                 </p>
               )}
             </div>
           </div>
 
-          {/* 3 Metric Ratings Row with Stars */}
-          <div className="grid grid-cols-3 gap-2 py-1 border-y border-slate-200/70 dark:border-slate-800/80">
+          {/* 3 Metrics Ratings Row with Stars matching HealthRate (WAIT TIME, BEDSIDE MANNER, CLEAR EXPLANATIONS) */}
+          <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-200/80 dark:border-slate-800">
             <div>
-              <div className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                AUDIT SPEED
+              <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                WAIT TIME
               </div>
               <div className="flex items-center gap-1.5 mt-1">
-                <div className="flex text-amber-400">{"★".repeat(5)}</div>
-                <span className="font-bold text-xs text-slate-900 dark:text-white">4.88</span>
+                <div className="flex text-amber-400 text-xs">★★★★★</div>
+                <span className="font-bold text-xs text-slate-900 dark:text-white font-mono">4.63</span>
               </div>
             </div>
 
             <div>
-              <div className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                ACCURACY RATE
+              <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                BEDSIDE MANNER
               </div>
               <div className="flex items-center gap-1.5 mt-1">
-                <div className="flex text-amber-400">{"★".repeat(5)}</div>
-                <span className="font-bold text-xs text-slate-900 dark:text-white">4.95</span>
+                <div className="flex text-amber-400 text-xs">★★★★★</div>
+                <span className="font-bold text-xs text-slate-900 dark:text-white font-mono">4.19</span>
               </div>
             </div>
 
             <div>
-              <div className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                ERP COMPLIANCE
+              <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                CLEAR EXPLANATIONS
               </div>
               <div className="flex items-center gap-1.5 mt-1">
-                <div className="flex text-amber-400">{"★".repeat(5)}</div>
-                <span className="font-bold text-xs text-slate-900 dark:text-white">4.92</span>
+                <div className="flex text-amber-400 text-xs">★★★★★</div>
+                <span className="font-bold text-xs text-slate-900 dark:text-white font-mono">4.74</span>
               </div>
             </div>
           </div>
 
-          {/* Top Activities Breakdown with Donut Graphic */}
+          {/* Top Patient Visit Reasons / Specializations Donut Graphic with Leader Percentages */}
           <div className="space-y-3">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
-              Top Placement & Verification Focus
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Top Patient Visit Reasons
             </h3>
 
             <div className="flex flex-col sm:flex-row items-center gap-6 pt-1">
-              {/* SVG Donut Graphic */}
+              {/* SVG Donut */}
               <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
                 <svg className="w-28 h-28 transform -rotate-90" viewBox="0 0 36 36">
-                  {/* Segment 1 (Teal #004D47, 35%) */}
+                  {/* Segment 1: Deep Teal #004D47 (35%) */}
                   <circle
                     cx="18"
                     cy="18"
@@ -617,7 +626,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                     strokeDasharray="35 65"
                     strokeDashoffset="0"
                   />
-                  {/* Segment 2 (Lime #D4F436, 25%) */}
+                  {/* Segment 2: Lime #D4F436 (25%) */}
                   <circle
                     cx="18"
                     cy="18"
@@ -628,7 +637,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                     strokeDasharray="25 75"
                     strokeDashoffset="-35"
                   />
-                  {/* Segment 3 (Mint #8FE388, 22%) */}
+                  {/* Segment 3: Mint #8FE388 (22%) */}
                   <circle
                     cx="18"
                     cy="18"
@@ -639,7 +648,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                     strokeDasharray="22 78"
                     strokeDashoffset="-60"
                   />
-                  {/* Segment 4 (Warm Gray #D6DCD0, 18%) */}
+                  {/* Segment 4: Warm Gray #D6DCD0 (18%) */}
                   <circle
                     cx="18"
                     cy="18"
@@ -651,18 +660,18 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                     strokeDashoffset="-82"
                   />
                 </svg>
-                {/* Center hole cutout overlay */}
+                {/* Center hole */}
                 <div className="absolute w-16 h-16 rounded-full bg-[#f8fafc] dark:bg-slate-950 flex items-center justify-center">
-                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">100%</span>
+                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">100%</span>
                 </div>
               </div>
 
-              {/* Dotted Leader Percentage Legend */}
+              {/* Dotted Leader Breakdown matching reference */}
               <div className="flex-1 w-full space-y-2 text-xs">
                 <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#004D47]" />
-                    <span>Software Engineering (PPO)</span>
+                    <span>Hypertension Management</span>
                   </div>
                   <span className="font-bold text-slate-900 dark:text-white font-mono">35%</span>
                 </div>
@@ -670,7 +679,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                 <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#D4F436]" />
-                    <span>Cloud Architecture & DevOps</span>
+                    <span>Preventive Cardiology</span>
                   </div>
                   <span className="font-bold text-slate-900 dark:text-white font-mono">25%</span>
                 </div>
@@ -678,7 +687,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                 <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#8FE388]" />
-                    <span>Data Science & AI Systems</span>
+                    <span>Heart Failure Monitoring</span>
                   </div>
                   <span className="font-bold text-slate-900 dark:text-white font-mono">22%</span>
                 </div>
@@ -686,7 +695,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                 <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#D6DCD0]" />
-                    <span>Product & Enterprise Consulting</span>
+                    <span>Chest Pain Evaluation</span>
                   </div>
                   <span className="font-bold text-slate-900 dark:text-white font-mono">18%</span>
                 </div>
@@ -694,18 +703,18 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
             </div>
           </div>
 
-          {/* Professional Activities Stacked Segment Bar */}
-          <div className="space-y-2 pt-2">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
-              Operational Distribution
+          {/* Professional Activities Horizontal Stacked Bar */}
+          <div className="space-y-2 pt-1">
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Professional Activities
             </h3>
 
             <div className="flex h-5 w-full rounded-lg overflow-hidden gap-1">
-              <div className="h-full bg-[#004D47] rounded-l-md" style={{ width: "47%" }} title="Direct Verification (47%)" />
-              <div className="h-full bg-[#C8E24D]" style={{ width: "24%" }} title="AI Audit & OCR (24%)" />
-              <div className="h-full bg-[#D4F436]" style={{ width: "16%" }} title="ERP Push & Sync (16%)" />
-              <div className="h-full bg-[#C2CDB4]" style={{ width: "10%" }} title="Student Guidance (10%)" />
-              <div className="h-full bg-[#E2E4DC] rounded-r-md" style={{ width: "3%" }} title="Flagged Audits (3%)" />
+              <div className="h-full bg-[#004D47] rounded-l-md" style={{ width: "47%" }} title="Clinical Consultations (47%)" />
+              <div className="h-full bg-[#C8E24D]" style={{ width: "24%" }} title="Diagnostic Procedures (24%)" />
+              <div className="h-full bg-[#D4F436]" style={{ width: "16%" }} title="Post-Op Follow-ups (16%)" />
+              <div className="h-full bg-[#C2CDB4]" style={{ width: "10%" }} title="Clinical Research (10%)" />
+              <div className="h-full bg-[#E2E4DC] rounded-r-md" style={{ width: "3%" }} title="Administration (3%)" />
             </div>
 
             <div className="flex justify-between text-[11px] font-mono text-slate-500 dark:text-slate-400 pt-0.5">
@@ -718,52 +727,33 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
           </div>
         </div>
 
-        {/* ================= COLUMN 3: RIGHT ACTIONS / SCHEDULING CARD (3.5 cols) ================= */}
+        {/* =========================================================================
+            COLUMN 3: BOOK AN APPOINTMENT CARD (3 COLS)
+            ========================================================================= */}
         <div className="lg:col-span-3 space-y-5">
-          {/* Main Elevated Action Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 p-6 shadow-xs space-y-5">
+          {/* Main Elevated Appointment Card */}
+          <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200/90 dark:border-slate-800 p-6 shadow-xs space-y-5">
             <div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-                {isEditing ? "Profile Manager" : "Book an Appointment"}
+                Book an Appointment
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                {isEditing
-                  ? "Save your live edits or manage availability"
-                  : "Schedule mock interview or document review"}
-              </p>
             </div>
-
-            {/* Profile Completion Indicator */}
-            {isEditing && (
-              <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 space-y-2">
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className="text-slate-700 dark:text-slate-300">Profile Readiness</span>
-                  <span className="text-blue-600 dark:text-blue-400 font-bold">95%</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-blue-600 rounded-full" style={{ width: "95%" }} />
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Institutional verification authority active across campus.
-                </p>
-              </div>
-            )}
 
             {/* Month & Week Selector */}
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200">
-                <span>September 2026</span>
+                <span>June</span>
                 <div className="flex items-center gap-1 text-slate-400">
-                  <button className="p-1 hover:text-slate-700 dark:hover:text-slate-200 rounded">
+                  <button className="p-1 hover:text-slate-700 dark:hover:text-slate-200 rounded cursor-pointer">
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <button className="p-1 hover:text-slate-700 dark:hover:text-slate-200 rounded">
+                  <button className="p-1 hover:text-slate-700 dark:hover:text-slate-200 rounded cursor-pointer">
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Day Pills Strip */}
+              {/* Day Pills */}
               <div className="grid grid-cols-7 gap-1 text-center">
                 {daysInWeek.map((item) => {
                   const isSelected = selectedDay === item.date;
@@ -779,7 +769,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                       <span
                         className={`w-7 h-7 mt-1 rounded-full text-xs font-bold flex items-center justify-center transition-all ${
                           isSelected
-                            ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs"
+                            ? "bg-slate-950 dark:bg-white text-white dark:text-slate-950 shadow-xs"
                             : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                         }`}
                       >
@@ -789,11 +779,17 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                   );
                 })}
               </div>
+
+              <div className="text-right">
+                <button className="text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-medium">
+                  Show full calendar ▾
+                </button>
+              </div>
             </div>
 
             {/* Time Slot Picker */}
-            <div className="space-y-3 pt-2">
-              <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Available Time</div>
+            <div className="space-y-3 pt-1">
+              <div className="text-xs font-bold text-slate-900 dark:text-white">Time</div>
 
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
@@ -808,7 +804,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                         onClick={() => setSelectedTime(slot)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors cursor-pointer ${
                           isSelected
-                            ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white font-bold"
+                            ? "bg-slate-950 dark:bg-white text-white dark:text-slate-950 border-slate-950 dark:border-white font-bold"
                             : "bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400"
                         }`}
                       >
@@ -821,7 +817,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
 
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                  AFTERNOON
+                  DAY
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {afternoonSlots.map((slot) => {
@@ -832,7 +828,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                         onClick={() => setSelectedTime(slot)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors cursor-pointer ${
                           isSelected
-                            ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white font-bold"
+                            ? "bg-slate-950 dark:bg-white text-white dark:text-slate-950 border-slate-950 dark:border-white font-bold"
                             : "bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-400"
                         }`}
                       >
@@ -844,28 +840,18 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
               </div>
             </div>
 
-            {/* Signature Lime Action Button */}
-            {isEditing ? (
-              <Button
-                onClick={() => handleSaveProfile()}
-                disabled={isSaving}
-                className="w-full bg-[#D4F436] hover:bg-[#c2e428] text-slate-950 font-black text-xs h-11 rounded-2xl shadow-sm transition-transform active:scale-98 cursor-pointer mt-2"
-              >
-                {isSaving ? "Saving Updates..." : "Save Profile Changes"}
-              </Button>
-            ) : (
-              <Button
-                onClick={() => {
-                  setBookingSuccess(true);
-                  setTimeout(() => setBookingSuccess(false), 4000);
-                }}
-                className="w-full bg-[#D4F436] hover:bg-[#c2e428] text-slate-950 font-black text-xs h-11 rounded-2xl shadow-sm transition-transform active:scale-98 cursor-pointer mt-2"
-              >
-                {bookingSuccess ? "Appointment Reserved ✓" : "Book Now"}
-              </Button>
-            )}
+            {/* Signature Lime Book Now Button */}
+            <Button
+              onClick={() => {
+                setBookingSuccess(true);
+                setTimeout(() => setBookingSuccess(false), 4000);
+              }}
+              className="w-full bg-[#D4F436] hover:bg-[#c2e428] text-slate-950 font-black text-xs h-11 rounded-2xl shadow-sm transition-transform active:scale-98 cursor-pointer mt-2"
+            >
+              {bookingSuccess ? "Appointment Reserved ✓" : "Book Now"}
+            </Button>
 
-            {/* Reset / Toggle Footer */}
+            {/* In-Place Quick Save & Reset Controls */}
             <div className="pt-2 flex items-center justify-between text-xs">
               <button
                 onClick={handleResetDefaults}
@@ -875,10 +861,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
               </button>
 
               <button
-                onClick={() => setIsEditing(!isEditing)}
-                className="text-blue-600 dark:text-blue-400 hover:underline font-semibold cursor-pointer"
+                onClick={() => handleSaveProfile()}
+                disabled={isSaving}
+                className="text-maroon-900 dark:text-maroon-300 hover:underline font-bold cursor-pointer"
               >
-                {isEditing ? "Switch to Preview Mode →" : "Edit Profile →"}
+                {isSaving ? "Saving..." : "Save Edits ↑"}
               </button>
             </div>
           </div>

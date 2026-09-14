@@ -58,6 +58,7 @@ def db():
 
     yield db_session
 
+    app.dependency_overrides.pop(get_db, None)
     db_session.close()
     transaction.rollback()
     connection.close()

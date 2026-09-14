@@ -42,3 +42,19 @@ def get_current_student(
     if user.role != "student":
         raise HTTPException(status_code=403, detail="Forbidden: Student access required")
     return user
+
+
+def get_current_pr(
+    user: User = Depends(get_current_user),
+) -> User:
+    if user.role not in ("pr", "admin"):
+        raise HTTPException(status_code=403, detail="Forbidden: PR access required")
+    return user
+
+
+def get_current_admin(
+    user: User = Depends(get_current_user),
+) -> User:
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Admin access required")
+    return user

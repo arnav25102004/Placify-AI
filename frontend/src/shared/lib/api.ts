@@ -163,12 +163,28 @@ export interface CreateManagedStudentPayload {
 }
 
 export interface UpdateStudentOfferPayload {
-  company: string;
-  role: string;
-  packageLPA: number;
-  assignedFaculty: string;
-  offerFileName?: string;
-  status?: string;
+  name?: string;
+  phone?: string;
+  cgpa?: string;
+  department?: string;
+}
+
+export interface FacultyOption {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export interface FacultyQueueItem {
+  id: number;
+  status: string;
+  student_name?: string | null;
+  company?: string | null;
+  role?: string | null;
+  offer_type?: string | null;
+  package?: number | null;
+  confidence?: number | null;
+  managed_student_id?: number | null;
 }
 
 import type { ProgramCohortAllocation } from "./pr-cohort-config";
@@ -660,6 +676,44 @@ class ApiClient {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: "Failed to update placement offer" }));
       throw new Error(err.detail || "Failed to update placement offer");
+    }
+    return res.json();
+  }
+
+  public async requestOffer(
+    studentId: string,
+    formData: FormData
+  ): Promise<ManagedStudent> {
+    const res = await fetch(`${API_BASE_URL}/pr/students/${studentId}/request-offer`, {
+      method: "POST",
+      headers: this.getHeaders(null), // multipart/form-data browser auto-boundary
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Failed to submit offer letter" }));
+      throw new Error(err.detail || "Failed to submit offer letter");
+    }
+    return res.json();
+  }
+
+  public async getFacultyRoster(): Promise<FacultyOption[]> {
+    const res = await fetch(`${API_BASE_URL}/pr/faculty-roster`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Failed to fetch faculty roster" }));
+      throw new Error(err.detail || "Failed to fetch faculty roster");
+    }
+    return res.json();
+  }
+
+  public async getFacultyQueue(): Promise<FacultyQueueItem[]> {
+    const res = await fetch(`${API_BASE_URL}/faculty/queue`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Failed to fetch faculty queue" }));
+      throw new Error(err.detail || "Failed to fetch faculty queue");
     }
     return res.json();
   }

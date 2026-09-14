@@ -6,6 +6,7 @@ from app.models.extraction import Extraction
 from app.models.audit_log import AuditLog
 from app.models.senior import Senior
 from app.models.company import Company
+from app.models.managed_student import ManagedStudent
 
 __all__ = [
     "Base",
@@ -16,4 +17,5 @@ __all__ = [
     "AuditLog",
     "Senior",
     "Company",
+    "ManagedStudent",
 ]

@@ -2,11 +2,40 @@ import os
 from sqlalchemy.orm import Session
 from app.database import SessionLocal, Base, engine
 from app.models.user import User
+from app.models.managed_student import ManagedStudent
 from app.auth_utils import get_password_hash
 
 from app.logging_config import get_logger
 
 logger = get_logger("placify.seed")
+
+_DEMO_STUDENT_NAMES = [
+    ("Arnav Sharma", "21CS042"), ("Divya Ramesh", "21CS019"), ("Rahul Verma", "21CS088"),
+    ("Tanvi Gupta", "21CS065"), ("Siddharth Kumar", "21CS102"), ("Sneha Sen", "21CS034"),
+    ("Ananya Iyer", "21CS011"), ("Vikram Malhotra", "21CS115"), ("Kavya Menon", "21CS054"),
+    ("Nikhil Joshi", "21CS076"), ("Meera Nair", "21CS061"), ("Aditya Roy", "21CS008"),
+    ("Pooja Hegde", "21CS049"), ("Gaurav Shah", "21CS038"), ("Rhea Chawla", "21CS093"),
+]
+
+
+def _seed_managed_students(db: Session, pr_id: int, campus_id: int):
+    """Seeds the PR's cohort roster into the real managed_students table."""
+    for name, roll_no in _DEMO_STUDENT_NAMES:
+        student = ManagedStudent(
+            name=name,
+            roll_no=roll_no,
+            email=f"{roll_no.lower()}@college.edu",
+            phone="+91 98765 00000",
+            cgpa="8.50",
+            department="CSE",
+            batch_timeline="2021-2025",
+            pr_id=pr_id,
+            campus_id=campus_id,
+            status="Unplaced",
+        )
+        db.add(student)
+    logger.info(f"Seeded {len(_DEMO_STUDENT_NAMES)} managed students for pr_id={pr_id}")
+
 
 def seed_db():
     Base.metadata.create_all(bind=engine)
@@ -68,7 +97,9 @@ def seed_db():
                 campus_id=1
             )
             db.add(pr)
+            db.flush()
             logger.info("Seeded default PR user: pr@placify.ai")
+            _seed_managed_students(db, pr.id, campus_id=1)
 
         existing_coord = db.query(User).filter(User.email == "coordinator@placify.ai").first()
         if not existing_coord:

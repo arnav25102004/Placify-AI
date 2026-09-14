@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Search,
   CheckCircle2,
@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
+import { api } from "@/shared/lib/api";
 
 export interface IDocumentHistoryItem {
   id: string;
@@ -129,12 +130,59 @@ interface DocumentHistoryPageProps {
   onOpenWorkspace?: (docId: string) => void;
 }
 
+const companyBadgeColors = [
+  "bg-red-500", "bg-blue-600", "bg-emerald-600", "bg-amber-600",
+  "bg-indigo-600", "bg-rose-700", "bg-slate-700",
+];
+
+function companyColorFor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
+  return companyBadgeColors[Math.abs(hash) % companyBadgeColors.length];
+}
+
 export const DocumentHistoryPage: React.FC<DocumentHistoryPageProps> = ({ onOpenWorkspace }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<"All" | "Verified" | "Needs Review" | "Mismatch">("All");
+  const [liveDocs, setLiveDocs] = useState<IDocumentHistoryItem[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    api
+      .getFacultyQueue()
+      .then((queue) => {
+        if (!isMounted) return;
+        const mapped: IDocumentHistoryItem[] = queue.map((item) => {
+          const company = item.company || "Unknown Company";
+          return {
+            id: String(item.id),
+            studentName: item.student_name || "Unknown Student",
+            studentRoll: "",
+            companyName: company,
+            companyInitials: company.slice(0, 2).toUpperCase(),
+            companyBgColor: companyColorFor(company),
+            documentName: `${item.role || "Offer"} — ${company}`,
+            fileSize: "",
+            status: "Needs Review",
+            verifiedBy: "Pending",
+            verifiedRole: "PR-Assigned Request",
+            date: "",
+          };
+        });
+        setLiveDocs(mapped);
+      })
+      .catch((err) => {
+        console.warn("Could not fetch faculty queue from backend:", err);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const allDocs = useMemo(() => [...liveDocs, ...mockDocumentHistory], [liveDocs]);
 
   const filteredDocs = useMemo(() => {
-    return mockDocumentHistory.filter((doc) => {
+    return allDocs.filter((doc) => {
       const matchesFilter = activeFilter === "All" || doc.status === activeFilter;
       const q = searchQuery.toLowerCase();
       const matchesSearch =
@@ -145,16 +193,16 @@ export const DocumentHistoryPage: React.FC<DocumentHistoryPageProps> = ({ onOpen
         doc.documentName.toLowerCase().includes(q);
       return matchesFilter && matchesSearch;
     });
-  }, [searchQuery, activeFilter]);
+  }, [allDocs, searchQuery, activeFilter]);
 
   const counts = useMemo(() => {
     return {
-      All: mockDocumentHistory.length,
-      Verified: mockDocumentHistory.filter((d) => d.status === "Verified").length,
-      "Needs Review": mockDocumentHistory.filter((d) => d.status === "Needs Review").length,
-      Mismatch: mockDocumentHistory.filter((d) => d.status === "Mismatch").length,
+      All: allDocs.length,
+      Verified: allDocs.filter((d) => d.status === "Verified").length,
+      "Needs Review": allDocs.filter((d) => d.status === "Needs Review").length,
+      Mismatch: allDocs.filter((d) => d.status === "Mismatch").length,
     };
-  }, []);
+  }, [allDocs]);
 
   return (
     <div className="space-y-6">

@@ -55,12 +55,25 @@ class GeminiAdapter:
         else:
             logger.info("No Gemini API key provided; active in deterministic intelligent mock mode.")
 
-    def extract_fields(self, file_bytes: bytes, filename: str) -> ExtractionResult:
+    def extract_fields(
+        self, file_bytes: bytes, filename: str, hint: Optional[Dict[str, Any]] = None
+    ) -> ExtractionResult:
         """
         Extracts placement offer letter data from file bytes using Gemini Pro API (or mock fallback).
+        `hint` (optional) carries expected student_name/company/role/offer_type from a PR-initiated
+        request, used to bias the prompt and later cross-verification — not used for self-submissions.
         """
         if self._client:
             try:
+                prompt = EXTRACTION_PROMPT
+                if hint:
+                    hint_lines = "\n".join(f"- {k}: {v}" for k, v in hint.items() if v)
+                    if hint_lines:
+                        prompt = (
+                            f"{EXTRACTION_PROMPT}\n\nContext hints (verify against the document, "
+                            f"do not assume they are correct):\n{hint_lines}\n"
+                        )
+
                 # Handle GenAI execution
                 if hasattr(self._client, 'models'):
                     # new google-genai SDK
@@ -68,7 +81,7 @@ class GeminiAdapter:
                         model='gemini-2.5-pro',
                         contents=[
                             {'mime_type': 'application/pdf' if filename.endswith('.pdf') else 'image/jpeg', 'data': file_bytes},
-                            EXTRACTION_PROMPT
+                            prompt
                         ]
                     )
                     text = response.text
@@ -76,7 +89,7 @@ class GeminiAdapter:
                     # legacy generativeai SDK
                     response = self._client.generate_content([
                         {'mime_type': 'application/pdf' if filename.endswith('.pdf') else 'image/jpeg', 'data': file_bytes},
-                        EXTRACTION_PROMPT
+                        prompt
                     ])
                     text = response.text
 
@@ -98,13 +111,14 @@ class GeminiAdapter:
         sample_packages = [12.0, 18.5, 24.0, 32.0, 8.5]
         
         name_idx = abs(hash(filename)) % len(sample_names)
-        
+        hint = hint or {}
+
         return ExtractionResult(
-            student_name=sample_names[name_idx],
-            company=sample_companies[name_idx % len(sample_companies)],
+            student_name=hint.get("student_name") or sample_names[name_idx],
+            company=hint.get("company") or sample_companies[name_idx % len(sample_companies)],
             package=sample_packages[name_idx % len(sample_packages)],
-            role=sample_roles[name_idx % len(sample_roles)],
-            offer_type="Full-time",
+            role=hint.get("role") or sample_roles[name_idx % len(sample_roles)],
+            offer_type=hint.get("offer_type") or "Full-time",
             confidence=0.96
         )
 

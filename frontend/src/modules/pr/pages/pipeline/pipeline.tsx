@@ -41,7 +41,7 @@ import {
   Sliders,
   Building2,
 } from "lucide-react";
-import { api } from "@/shared/lib/api";
+import { api, FacultyOption } from "@/shared/lib/api";
 
 // Curated brand logos for student companies
 const COMPANY_LOGOS: Record<string, string> = {
@@ -467,6 +467,22 @@ export const PRPipelinePage: React.FC = () => {
     };
   }, [currentDepartment]);
 
+  const [facultyRoster, setFacultyRoster] = useState<FacultyOption[]>([]);
+  useEffect(() => {
+    let isMounted = true;
+    api
+      .getFacultyRoster()
+      .then((roster) => {
+        if (isMounted) setFacultyRoster(roster);
+      })
+      .catch((err) => {
+        console.warn("Could not fetch faculty roster from backend, using fallback options:", err);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
@@ -484,13 +500,17 @@ export const PRPipelinePage: React.FC = () => {
   const [inchargeFaculty, setInchargeFaculty] = useState(
     "Dr. Anita Desai (HOD CS)"
   );
+  const [inchargeFacultyId, setInchargeFacultyId] = useState<number | null>(null);
   const [offerCompany, setOfferCompany] = useState("");
   const [offerRole, setOfferRole] = useState("Software Engineer");
   const [offerPackage, setOfferPackage] = useState("24.0");
   const [stagedDocName, setStagedDocName] = useState(
     "Student_Offer_Letter_Official.pdf"
   );
+  const [offerFile, setOfferFile] = useState<File | null>(null);
+  const offerFileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Form states for adding a student to this PR cohort
   const [newStudentName, setNewStudentName] = useState("");
@@ -505,54 +525,51 @@ export const PRPipelinePage: React.FC = () => {
     setOfferRole(student.role || "Software Engineer");
     setOfferPackage(student.packageLPA ? student.packageLPA.toString() : "20.0");
     setInchargeFaculty(student.assignedFaculty || "Dr. Anita Desai (HOD CS)");
+    setInchargeFacultyId(facultyRoster[0]?.id ?? null);
     setStagedDocName(
       student.offerFileName ||
         `${student.name.replace(/\s+/g, "_")}_Offer_Letter.pdf`
     );
+    setOfferFile(null);
+    setUploadError(null);
     setIsStudentDialogOpen(true);
   };
 
   const handleConfirmUpload = async () => {
     if (!selectedStudent) return;
     const pkg = parseFloat(offerPackage) || 0;
-    const updatedFields = {
-      company: offerCompany,
-      role: offerRole,
-      packageLPA: pkg,
-      assignedFaculty: inchargeFaculty,
-      offerFileName: stagedDocName,
-      status: "Letter_Uploaded" as const,
-      hasOfferLetter: true,
-    };
 
-    try {
-      await api.updateStudentOffer(selectedStudent.id, {
-        company: offerCompany,
-        role: offerRole,
-        packageLPA: pkg,
-        assignedFaculty: inchargeFaculty,
-        offerFileName: stagedDocName,
-        status: "Letter_Uploaded",
-      });
-    } catch (err) {
-      console.warn("Backend student offer update fallback to local state:", err);
+    if (!offerFile) {
+      setUploadError("Attach the offer letter file before submitting.");
+      return;
     }
 
-    setStudents((prev) =>
-      prev.map((s) =>
-        s.id === selectedStudent.id
-          ? {
-              ...s,
-              ...updatedFields,
-            }
-          : s
-      )
-    );
-    setIsStudentDialogOpen(false);
-    setSuccessToast(
-      `Offer letter for ${selectedStudent.name} saved to Drive and assigned to ${inchargeFaculty}. Verification workflow initiated.`
-    );
-    setTimeout(() => setSuccessToast(null), 6000);
+    const formData = new FormData();
+    formData.append("file", offerFile);
+    formData.append("company", offerCompany);
+    formData.append("role", offerRole);
+    formData.append("offer_type", "Full-time");
+    if (inchargeFacultyId != null) {
+      formData.append("incharge_faculty_id", String(inchargeFacultyId));
+    }
+
+    try {
+      const updated = await api.requestOffer(selectedStudent.id, formData);
+      setStudents((prev) =>
+        prev.map((s) => (s.id === selectedStudent.id ? { ...s, ...updated, status: updated.status as IManagedStudent["status"] } : s))
+      );
+      setIsStudentDialogOpen(false);
+      setUploadError(null);
+      setSuccessToast(
+        `Offer letter for ${selectedStudent.name} uploaded and assigned to ${inchargeFaculty}. Verification workflow initiated.`
+      );
+      setTimeout(() => setSuccessToast(null), 6000);
+    } catch (err) {
+      console.error("Failed to submit offer letter:", err);
+      setUploadError(
+        err instanceof Error ? err.message : "Failed to submit offer letter. Please try again."
+      );
+    }
   };
 
   const handleAddStudent = async () => {
@@ -1290,19 +1307,21 @@ export const PRPipelinePage: React.FC = () => {
                     Assign In-charge Faculty Reviewer
                   </label>
                   <select
-                    value={inchargeFaculty}
-                    onChange={(e) => setInchargeFaculty(e.target.value)}
+                    value={inchargeFacultyId ?? ""}
+                    onChange={(e) => {
+                      const id = e.target.value ? Number(e.target.value) : null;
+                      setInchargeFacultyId(id);
+                      const match = facultyRoster.find((f) => f.id === id);
+                      setInchargeFaculty(match ? match.name : inchargeFaculty);
+                    }}
                     className="w-full h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-blue-500"
                   >
-                    <option value="Dr. Anita Desai (HOD CS)">
-                      Dr. Anita Desai (HOD CS)
-                    </option>
-                    <option value="Prof. S. Ranganathan (Senior Mentor)">
-                      Prof. S. Ranganathan (Senior Mentor)
-                    </option>
-                    <option value="Dr. P. K. Sharma (Placement Chair)">
-                      Dr. P. K. Sharma (Placement Chair)
-                    </option>
+                    <option value="">Select a faculty reviewer</option>
+                    {facultyRoster.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -1311,19 +1330,40 @@ export const PRPipelinePage: React.FC = () => {
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Upload Official Offer Letter (PDF)
                   </label>
-                  <div className="border-2 border-dashed border-blue-200 dark:border-blue-900/60 hover:border-blue-400 bg-blue-50/30 dark:bg-blue-950/20 rounded-2xl p-5 text-center cursor-pointer transition-all">
+                  <input
+                    ref={offerFileInputRef}
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setOfferFile(file);
+                      if (file) {
+                        setStagedDocName(file.name);
+                        setUploadError(null);
+                      }
+                    }}
+                  />
+                  <div
+                    onClick={() => offerFileInputRef.current?.click()}
+                    className="border-2 border-dashed border-blue-200 dark:border-blue-900/60 hover:border-blue-400 bg-blue-50/30 dark:bg-blue-950/20 rounded-2xl p-5 text-center cursor-pointer transition-all"
+                  >
                     <UploadCloud className="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto" />
                     <div className="text-xs text-slate-800 dark:text-slate-200 font-semibold mt-2">
-                      Attached File:{" "}
+                      {offerFile ? "Attached File: " : "Click to attach file: "}
                       <span className="font-mono text-blue-700 dark:text-blue-400">
                         {stagedDocName}
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                      Files are securely transmitted directly to College Google
-                      Drive
+                      Files are uploaded directly and enter the extraction pipeline immediately
                     </p>
                   </div>
+                  {uploadError && (
+                    <p className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">
+                      {uploadError}
+                    </p>
+                  )}
                 </div>
 
                 {/* AI Automated Pipeline Notice */}

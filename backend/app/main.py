@@ -15,7 +15,7 @@ from app.logging_config import (
 )
 from app.seed import seed_db
 import app.models  # Ensure all models are registered with Base.metadata
-from app.routers import auth, batches, documents, student, dev_db, pr
+from app.routers import auth, batches, documents, student, dev_db, pr, faculty
 
 # Initialize system-wide informative logging
 setup_logging()
@@ -52,8 +52,9 @@ def on_startup():
     logger.info("Starting Placify AI backend service...")
     logger.info("Verifying database connection and schemas...")
     Base.metadata.create_all(bind=engine)
-    from app.database import ensure_user_profile_columns
+    from app.database import ensure_user_profile_columns, ensure_document_columns
     ensure_user_profile_columns(engine)
+    ensure_document_columns(engine)
     seed_db()
     logger.info("Placify AI services online and verified ready for requests.")
 
@@ -137,3 +138,4 @@ app.include_router(documents.router)
 app.include_router(student.router)
 app.include_router(dev_db.router)
 app.include_router(pr.router)
+app.include_router(faculty.router)

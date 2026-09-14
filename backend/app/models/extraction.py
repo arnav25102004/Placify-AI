@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Column, ForeignKey, Integer, Numeric, String, Text
 
 from app.database import Base
 
@@ -15,3 +15,9 @@ class Extraction(Base):
     offer_type = Column(String, nullable=True)
     confidence = Column(Numeric, nullable=False)
     edited_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    # Fraud / cross-verification fields (nullable — populated only when checks actually ran)
+    authenticity_score = Column(Numeric, nullable=True)
+    profile_match_score = Column(Numeric, nullable=True)
+    fraud_flags = Column(Text, nullable=True)
+    discrepancies = Column(Text, nullable=True)

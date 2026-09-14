@@ -37,12 +37,17 @@ class CreateManagedStudentRequest(BaseModel):
 
 
 class UpdateStudentOfferRequest(BaseModel):
-    company: str
-    role: str
-    packageLPA: float
-    assignedFaculty: str
-    offerFileName: Optional[str] = None
-    status: str = "Letter_Uploaded"
+    """Roster-metadata-only edit — offer data now flows through /request-offer."""
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    cgpa: Optional[str] = None
+    department: Optional[str] = None
+
+
+class FacultyOptionSchema(BaseModel):
+    id: int
+    name: str
+    email: str
 
 
 class ProgramCohortAllocationSchema(BaseModel):

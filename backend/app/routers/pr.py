@@ -1,325 +1,269 @@
-import datetime
-import math
+import hashlib
+import os
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, UploadFile
+from sqlalchemy.orm import Session
 
+from app.database import get_db
+from app.dependencies.auth import get_current_pr
 from app.logging_config import get_logger
+from app.models.document import Document
+from app.models.extraction import Extraction
+from app.models.managed_student import ManagedStudent
+from app.models.user import User
 from app.schemas.pr import (
     ManagedStudentSchema,
     CreateManagedStudentRequest,
     UpdateStudentOfferRequest,
+    FacultyOptionSchema,
     ProgramCohortAllocationSchema,
     UpdateProgramAllocationRequest,
 )
+from app.services.drive_adapter import drive_adapter
+from app.tasks.extraction import extract_document, process_document_extraction
 
 logger = get_logger("placify.pr")
 router = APIRouter(prefix="/api/v1/pr", tags=["pr"])
 
-# Realistic in-memory dataset of students assigned to PR cohort (with portrait photo URLs)
-_MANAGED_STUDENTS_STORE: List[dict] = [
-    {
-        "id": "s-01",
-        "name": "Arnav Sharma",
-        "rollNo": "21CS042",
-        "email": "arnav.s@college.edu",
-        "phone": "+91 98765 43210",
-        "cgpa": "8.92",
-        "department": "CSE",
-        "batchTimeline": "2021-2025",
-        "assignedPrId": "pr-1",
-        "assignedPrName": "Rohit Patel",
-        "status": "Letter_Uploaded",
-        "company": "Google India",
-        "role": "SWE Intern + PPO",
-        "packageLPA": 32.5,
-        "assignedFaculty": "Dr. Anita Desai (HOD)",
-        "hasOfferLetter": True,
-        "offerFileName": "Google_India_Arnav_21CS042.pdf",
-        "photoUrl": "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&auto=format&fit=crop&q=80",
-    },
-    {
-        "id": "s-02",
-        "name": "Divya Ramesh",
-        "rollNo": "21CS019",
-        "email": "divya.r@college.edu",
-        "phone": "+91 98765 43211",
-        "cgpa": "9.15",
-        "department": "CSE",
-        "batchTimeline": "2021-2025",
-        "assignedPrId": "pr-1",
-        "assignedPrName": "Rohit Patel",
-        "status": "Verified_Placed",
-        "company": "Microsoft",
-        "role": "Cloud Solutions Eng.",
-        "packageLPA": 28.0,
-        "assignedFaculty": "Prof. S. Ranganathan",
-        "hasOfferLetter": True,
-        "offerFileName": "Microsoft_Divya_21CS019.pdf",
-        "photoUrl": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80",
-    },
-    {
-        "id": "s-03",
-        "name": "Rahul Verma",
-        "rollNo": "21CS088",
-        "email": "rahul.v@college.edu",
-        "phone": "+91 98765 43212",
-        "cgpa": "7.84",
-        "department": "CSE",
-        "batchTimeline": "2021-2025",
-        "assignedPrId": "pr-1",
-        "assignedPrName": "Rohit Patel",
-        "status": "Unplaced",
-        "company": None,
-        "role": None,
-        "packageLPA": None,
-        "assignedFaculty": None,
-        "hasOfferLetter": False,
-        "offerFileName": None,
-        "photoUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
-    },
-    {
-        "id": "s-04",
-        "name": "Tanvi Gupta",
-        "rollNo": "21CS065",
-        "email": "tanvi.g@college.edu",
-        "phone": "+91 98765 43213",
-        "cgpa": "8.45",
-        "department": "CSE",
-        "batchTimeline": "2021-2025",
-        "assignedPrId": "pr-1",
-        "assignedPrName": "Rohit Patel",
-        "status": "Offer_Reported",
-        "company": "Goldman Sachs",
-        "role": "Summer Analyst",
-        "packageLPA": 24.0,
-        "assignedFaculty": "Dr. P. K. Sharma",
-        "hasOfferLetter": False,
-        "offerFileName": None,
-        "photoUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
-    },
-    {
-        "id": "s-05",
-        "name": "Siddharth Kumar",
-        "rollNo": "21CS102",
-        "email": "siddharth.k@college.edu",
-        "phone": "+91 98765 43214",
-        "cgpa": "8.20",
-        "department": "CSE",
-        "batchTimeline": "2021-2025",
-        "assignedPrId": "pr-1",
-        "assignedPrName": "Rohit Patel",
-        "status": "Offer_Reported",
-        "company": "Oracle",
-        "role": "Server Tech Eng.",
-        "packageLPA": 18.0,
-        "assignedFaculty": None,
-        "hasOfferLetter": False,
-        "offerFileName": None,
-        "photoUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
-    },
-    {
-        "id": "s-06",
-        "name": "Sneha Sen",
-        "rollNo": "21CS034",
-        "email": "sneha.s@college.edu",
-        "phone": "+91 98765 43215",
-        "cgpa": "8.70",
-        "department": "CSE",
-        "batchTimeline": "2021-2025",
-        "assignedPrId": "pr-1",
-        "assignedPrName": "Rohit Patel",
-        "status": "Verified_Placed",
-        "company": "Cisco Systems",
-        "role": "Network Software Eng.",
-        "packageLPA": 19.5,
-        "assignedFaculty": "Dr. Anita Desai (HOD)",
-        "hasOfferLetter": True,
-        "offerFileName": "Cisco_Sneha_21CS034.pdf",
-        "photoUrl": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80",
-    },
-    {
-        "id": "s-07",
-        "name": "Ananya Iyer",
-        "rollNo": "21CS011",
-        "email": "ananya.i@college.edu",
-        "phone": "+91 98765 43216",
-        "cgpa": "8.90",
-        "department": "CSE",
-        "batchTimeline": "2021-2025",
-        "assignedPrId": "pr-1",
-        "assignedPrName": "Rohit Patel",
-        "status": "Unplaced",
-        "company": None,
-        "role": None,
-        "packageLPA": None,
-        "assignedFaculty": None,
-        "hasOfferLetter": False,
-        "offerFileName": None,
-        "photoUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80",
-    },
-    {
-        "id": "s-08",
-        "name": "Vikram Malhotra",
-        "rollNo": "21CS115",
-        "email": "vikram.m@college.edu",
-        "phone": "+91 98765 43217",
-        "cgpa": "7.95",
-        "department": "CSE",
-        "batchTimeline": "2021-2025",
-        "assignedPrId": "pr-1",
-        "assignedPrName": "Rohit Patel",
-        "status": "Unplaced",
-        "company": None,
-        "role": None,
-        "packageLPA": None,
-        "assignedFaculty": None,
-        "hasOfferLetter": False,
-        "offerFileName": None,
-        "photoUrl": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80",
-    },
-    {
-        "id": "s-09",
-        "name": "Kavya Menon",
-        "rollNo": "21CS054",
-        "email": "kavya.m@college.edu",
-        "phone": "+91 98765 43218",
-        "cgpa": "8.65",
-        "department": "CSE",
-        "batchTimeline": "2021-2025",
-        "assignedPrId": "pr-1",
-        "assignedPrName": "Rohit Patel",
-        "status": "Letter_Uploaded",
-        "company": "Amazon",
-        "role": "SDE-1",
-        "packageLPA": 26.0,
-        "assignedFaculty": "Prof. S. Ranganathan",
-        "hasOfferLetter": True,
-        "offerFileName": "Amazon_Kavya_21CS054.pdf",
-        "photoUrl": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&auto=format&fit=crop&q=80",
-    },
-    {
-        "id": "s-10",
-        "name": "Nikhil Joshi",
-        "rollNo": "21CS076",
-        "email": "nikhil.j@college.edu",
-        "phone": "+91 98765 43219",
-        "cgpa": "8.12",
-        "department": "CSE",
-        "batchTimeline": "2021-2025",
-        "assignedPrId": "pr-1",
-        "assignedPrName": "Rohit Patel",
-        "status": "Unplaced",
-        "company": None,
-        "role": None,
-        "packageLPA": None,
-        "assignedFaculty": None,
-        "hasOfferLetter": False,
-        "offerFileName": None,
-        "photoUrl": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80",
-    },
-    {
-        "id": "s-11",
-        "name": "Meera Nair",
-        "rollNo": "21CS061",
-        "email": "meera.n@college.edu",
-        "phone": "+91 98765 43220",
-        "cgpa": "8.50",
-        "department": "CSE",
-        "batchTimeline": "2021-2025",
-        "assignedPrId": "pr-1",
-        "assignedPrName": "Rohit Patel",
-        "status": "Offer_Reported",
-        "company": "Morgan Stanley",
-        "role": "Tech Analyst",
-        "packageLPA": 22.0,
-        "assignedFaculty": None,
-        "hasOfferLetter": False,
-        "offerFileName": None,
-        "photoUrl": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80",
-    },
-    {
-        "id": "s-12",
-        "name": "Aditya Roy",
-        "rollNo": "21CS008",
-        "email": "aditya.r@college.edu",
-        "phone": "+91 98765 43221",
-        "cgpa": "7.70",
-        "department": "CSE",
-        "batchTimeline": "2021-2025",
-        "assignedPrId": "pr-1",
-        "assignedPrName": "Rohit Patel",
-        "status": "Unplaced",
-        "company": None,
-        "role": None,
-        "packageLPA": None,
-        "assignedFaculty": None,
-        "hasOfferLetter": False,
-        "offerFileName": None,
-        "photoUrl": "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200&auto=format&fit=crop&q=80",
-    },
-    {
-        "id": "s-13",
-        "name": "Pooja Hegde",
-        "rollNo": "21CS049",
-        "email": "pooja.h@college.edu",
-        "phone": "+91 98765 43222",
-        "cgpa": "8.85",
-        "department": "CSE",
-        "batchTimeline": "2021-2025",
-        "assignedPrId": "pr-1",
-        "assignedPrName": "Rohit Patel",
-        "status": "Verified_Placed",
-        "company": "Adobe",
-        "role": "Member Tech Staff",
-        "packageLPA": 34.0,
-        "assignedFaculty": "Dr. P. K. Sharma",
-        "hasOfferLetter": True,
-        "offerFileName": "Adobe_Pooja_21CS049.pdf",
-        "photoUrl": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80",
-    },
-    {
-        "id": "s-14",
-        "name": "Gaurav Shah",
-        "rollNo": "21CS038",
-        "email": "gaurav.s@college.edu",
-        "phone": "+91 98765 43223",
-        "cgpa": "8.30",
-        "department": "CSE",
-        "batchTimeline": "2021-2025",
-        "assignedPrId": "pr-1",
-        "assignedPrName": "Rohit Patel",
-        "status": "Unplaced",
-        "company": None,
-        "role": None,
-        "packageLPA": None,
-        "assignedFaculty": None,
-        "hasOfferLetter": False,
-        "offerFileName": None,
-        "photoUrl": "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=80",
-    },
-    {
-        "id": "s-15",
-        "name": "Rhea Chawla",
-        "rollNo": "21CS093",
-        "email": "rhea.c@college.edu",
-        "phone": "+91 98765 43224",
-        "cgpa": "9.05",
-        "department": "CSE",
-        "batchTimeline": "2021-2025",
-        "assignedPrId": "pr-1",
-        "assignedPrName": "Rohit Patel",
-        "status": "Letter_Uploaded",
-        "company": "Atlassian",
-        "role": "Associate Developer",
-        "packageLPA": 36.0,
-        "assignedFaculty": "Dr. Anita Desai (HOD)",
-        "hasOfferLetter": True,
-        "offerFileName": "Atlassian_Rhea_21CS093.pdf",
-        "photoUrl": "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=200&auto=format&fit=crop&q=80",
-    },
-]
 
-# In-memory store for Program Cohort Allocations (Super Admin Governance)
+def _to_schema(db: Session, student: ManagedStudent) -> ManagedStudentSchema:
+    """Builds the API response by joining the roster row to its latest Document+Extraction."""
+    latest_doc = (
+        db.query(Document)
+        .filter(Document.managed_student_id == student.id)
+        .order_by(Document.id.desc())
+        .first()
+    )
+    extraction = None
+    if latest_doc:
+        extraction = (
+            db.query(Extraction)
+            .filter(Extraction.document_id == latest_doc.id)
+            .order_by(Extraction.id.desc())
+            .first()
+        )
+
+    faculty_name = None
+    if student.incharge_faculty_id:
+        faculty = db.query(User).filter(User.id == student.incharge_faculty_id).first()
+        faculty_name = (faculty.full_name or faculty.email) if faculty else None
+
+    return ManagedStudentSchema(
+        id=str(student.id),
+        name=student.name,
+        rollNo=student.roll_no,
+        email=student.email or "",
+        phone=student.phone or "",
+        cgpa=student.cgpa or "",
+        department=student.department or "",
+        batchTimeline=student.batch_timeline or "",
+        assignedPrId=str(student.pr_id),
+        assignedPrName="",
+        status=student.status,
+        company=extraction.company if extraction else (latest_doc.company_name_hint if latest_doc else None),
+        role=extraction.role if extraction else (latest_doc.role_title_hint if latest_doc else None),
+        packageLPA=float(extraction.package) if extraction and extraction.package is not None else None,
+        assignedFaculty=faculty_name,
+        hasOfferLetter=latest_doc is not None,
+        offerFileName=latest_doc.drive_file_id if latest_doc else None,
+        photoUrl=student.photo_url,
+    )
+
+
+@router.get("/students", response_model=List[ManagedStudentSchema])
+def list_managed_students(
+    search: Optional[str] = Query(None, description="Search by name, roll number, or company"),
+    status: Optional[str] = Query(None, description="Filter by status"),
+    department: Optional[str] = Query(None, description="Filter by department"),
+    current_pr: User = Depends(get_current_pr),
+    db: Session = Depends(get_db),
+):
+    """Returns the PR's cohort roster with placement status, derived from real documents/extractions."""
+    query = db.query(ManagedStudent)
+    if current_pr.role != "admin":
+        query = query.filter(ManagedStudent.pr_id == current_pr.id)
+
+    if status:
+        query = query.filter(ManagedStudent.status == status)
+    if department:
+        query = query.filter(ManagedStudent.department == department)
+
+    students = query.all()
+    results = [_to_schema(db, s) for s in students]
+
+    if search:
+        s = search.lower().strip()
+        results = [
+            r for r in results
+            if s in r.name.lower()
+            or s in r.rollNo.lower()
+            or (r.company and s in r.company.lower())
+            or (r.role and s in r.role.lower())
+        ]
+
+    return results
+
+
+@router.post("/students", response_model=ManagedStudentSchema, status_code=201)
+def add_managed_student(
+    payload: CreateManagedStudentRequest,
+    current_pr: User = Depends(get_current_pr),
+    db: Session = Depends(get_db),
+):
+    """Registers a student into the PR's assigned cohort roster."""
+    student = ManagedStudent(
+        name=payload.name,
+        roll_no=payload.rollNo.upper(),
+        email=payload.email or f"{payload.rollNo.lower()}@college.edu",
+        phone=payload.phone or "+91 98765 00000",
+        cgpa=payload.cgpa,
+        department=payload.department,
+        batch_timeline=payload.batchTimeline,
+        pr_id=current_pr.id,
+        campus_id=current_pr.campus_id,
+        status="Unplaced",
+        photo_url=payload.photoUrl,
+    )
+    db.add(student)
+    db.commit()
+    db.refresh(student)
+    logger.info(f"Registered student {student.name} ({student.roll_no}) to PR cohort id={student.id} by pr_id={current_pr.id}")
+    return _to_schema(db, student)
+
+
+@router.put("/students/{student_id}", response_model=ManagedStudentSchema)
+def update_student_roster_info(
+    student_id: int,
+    payload: UpdateStudentOfferRequest,
+    current_pr: User = Depends(get_current_pr),
+    db: Session = Depends(get_db),
+):
+    """Updates roster metadata (name/phone/cgpa/department) for a managed student."""
+    student = db.query(ManagedStudent).filter(ManagedStudent.id == student_id).first()
+    if not student or (current_pr.role != "admin" and student.pr_id != current_pr.id):
+        raise HTTPException(status_code=404, detail="Student record not found in cohort roster")
+
+    if payload.name is not None:
+        student.name = payload.name
+    if payload.phone is not None:
+        student.phone = payload.phone
+    if payload.cgpa is not None:
+        student.cgpa = payload.cgpa
+    if payload.department is not None:
+        student.department = payload.department
+
+    db.commit()
+    db.refresh(student)
+    logger.info(f"Updated roster info for managed_student_id={student_id}")
+    return _to_schema(db, student)
+
+
+@router.post("/students/{student_id}/request-offer", response_model=ManagedStudentSchema)
+def request_offer(
+    student_id: int,
+    file: UploadFile,
+    company: str = Form(...),
+    role: str = Form(...),
+    offer_type: str = Form("Full-time"),
+    incharge_faculty_id: Optional[int] = Form(None),
+    current_pr: User = Depends(get_current_pr),
+    db: Session = Depends(get_db),
+):
+    """
+    PR reports a student's offer with the letter attached directly. Creates a real Document,
+    uploads the file, links it to the roster student, and enqueues extraction.
+    """
+    student = db.query(ManagedStudent).filter(ManagedStudent.id == student_id).first()
+    if not student or (current_pr.role != "admin" and student.pr_id != current_pr.id):
+        raise HTTPException(status_code=404, detail="Student record not found in cohort roster")
+
+    if incharge_faculty_id is not None:
+        faculty = db.query(User).filter(User.id == incharge_faculty_id, User.role == "teacher").first()
+        if not faculty:
+            raise HTTPException(status_code=400, detail="incharge_faculty_id must reference a valid teacher")
+
+    content = file.file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Offer letter file cannot be empty")
+
+    file_hash = hashlib.sha256(content).hexdigest()
+    filename = file.filename or "offer_letter.pdf"
+    content_type = file.content_type or "application/pdf"
+
+    drive_res = drive_adapter.upload_file(content, filename, content_type)
+
+    doc = Document(
+        batch_id=None,
+        student_id=None,
+        submission_source="pr_request",
+        drive_file_id=drive_res["drive_file_id"],
+        drive_view_link=drive_res["drive_view_link"],
+        file_hash=file_hash,
+        status="pending",
+        managed_student_id=student.id,
+        requested_by_id=current_pr.id,
+        incharge_faculty_id=incharge_faculty_id,
+        company_name_hint=company,
+        role_title_hint=role,
+        offer_type_hint=offer_type,
+    )
+    db.add(doc)
+
+    student.status = "Letter_Uploaded"
+    if incharge_faculty_id is not None:
+        student.incharge_faculty_id = incharge_faculty_id
+
+    db.commit()
+    db.refresh(doc)
+    logger.info(
+        f"PR id={current_pr.id} reported offer for managed_student_id={student.id}: "
+        f"company='{company}', role='{role}', document id={doc.id}"
+    )
+
+    use_celery = False
+    if os.getenv("TESTING") != "true":
+        try:
+            import redis
+            r = redis.Redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"), socket_timeout=0.5)
+            r.ping()
+            use_celery = True
+        except Exception:
+            use_celery = False
+
+    if use_celery:
+        try:
+            extract_document.delay(doc.id)
+        except Exception:
+            process_document_extraction(doc.id, db=db)
+    else:
+        process_document_extraction(doc.id, db=db)
+
+    db.refresh(student)
+    return _to_schema(db, student)
+
+
+@router.get("/faculty-roster", response_model=List[FacultyOptionSchema])
+def list_faculty_roster(
+    current_pr: User = Depends(get_current_pr),
+    db: Session = Depends(get_db),
+):
+    """Same-campus teacher list for assigning an in-charge reviewer to a request."""
+    faculty = (
+        db.query(User)
+        .filter(User.role == "teacher", User.campus_id == current_pr.campus_id)
+        .all()
+    )
+    return [
+        FacultyOptionSchema(id=f.id, name=f.full_name or f.email, email=f.email)
+        for f in faculty
+    ]
+
+
+# --- Program Cohort Allocations (Super Admin governance) — unchanged, still in-memory ---
+# Out of scope for this reconciliation: not part of the real-data gap it closes.
+import datetime
+import math
+
 _ALLOCATIONS_STORE = [
     {
         "id": "prog-cse",
@@ -408,107 +352,15 @@ _ALLOCATIONS_STORE = [
 ]
 
 
-@router.get("/students", response_model=List[ManagedStudentSchema])
-def list_managed_students(
-    search: Optional[str] = Query(None, description="Search by name, roll number, or company"),
-    status: Optional[str] = Query(None, description="Filter by status"),
-    department: Optional[str] = Query(None, description="Filter by department"),
-):
-    """
-    Returns the list of students in the PR cohort roster with placement status and portrait photos.
-    """
-    results = _MANAGED_STUDENTS_STORE
-
-    if search:
-        s = search.lower().strip()
-        results = [
-            st for st in results
-            if s in st["name"].lower()
-            or s in st["rollNo"].lower()
-            or (st["company"] and s in st["company"].lower())
-            or (st["role"] and s in st["role"].lower())
-        ]
-
-    if status:
-        results = [st for st in results if st["status"] == status]
-
-    if department:
-        results = [st for st in results if st["department"].lower() == department.lower()]
-
-    return results
-
-
-@router.post("/students", response_model=ManagedStudentSchema, status_code=201)
-def add_managed_student(payload: CreateManagedStudentRequest):
-    """
-    Allows a PR to register a student into their assigned cohort.
-    """
-    new_id = f"s-{len(_MANAGED_STUDENTS_STORE) + 1:02d}"
-    email = payload.email or f"{payload.rollNo.lower()}@college.edu"
-    phone = payload.phone or "+91 98765 00000"
-
-    # Default fallback portrait if none provided
-    photo = payload.photoUrl or "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"
-
-    new_student = {
-        "id": new_id,
-        "name": payload.name,
-        "rollNo": payload.rollNo.upper(),
-        "email": email,
-        "phone": phone,
-        "cgpa": payload.cgpa,
-        "department": payload.department,
-        "batchTimeline": payload.batchTimeline,
-        "assignedPrId": payload.assignedPrId,
-        "assignedPrName": payload.assignedPrName,
-        "status": "Unplaced",
-        "company": None,
-        "role": None,
-        "packageLPA": None,
-        "assignedFaculty": None,
-        "hasOfferLetter": False,
-        "offerFileName": None,
-        "photoUrl": photo,
-    }
-    _MANAGED_STUDENTS_STORE.append(new_student)
-    logger.info(f"Registered student {new_student['name']} ({new_student['rollNo']}) to PR cohort id={new_id}")
-    return new_student
-
-
-@router.put("/students/{student_id}", response_model=ManagedStudentSchema)
-def update_student_offer(student_id: str, payload: UpdateStudentOfferRequest):
-    """
-    Updates the placement offer, role, package, and assigned faculty reviewer for a student.
-    """
-    for idx, student in enumerate(_MANAGED_STUDENTS_STORE):
-        if student["id"] == student_id:
-            student["company"] = payload.company
-            student["role"] = payload.role
-            student["packageLPA"] = payload.packageLPA
-            student["assignedFaculty"] = payload.assignedFaculty
-            student["status"] = payload.status
-            if payload.offerFileName:
-                student["hasOfferLetter"] = True
-                student["offerFileName"] = payload.offerFileName
-            logger.info(f"Updated placement offer for student {student_id}: {payload.company} - {payload.packageLPA} LPA")
-            return student
-
-    raise HTTPException(status_code=404, detail="Student record not found in cohort roster")
-
-
 @router.get("/cohort-allocations", response_model=List[ProgramCohortAllocationSchema])
 def list_cohort_allocations():
-    """
-    Returns program-wise PR cohort allocation policies configured by the Super Admin.
-    """
+    """Returns program-wise PR cohort allocation policies configured by the Super Admin."""
     return _ALLOCATIONS_STORE
 
 
 @router.put("/cohort-allocations/{allocation_id}", response_model=ProgramCohortAllocationSchema)
 def update_cohort_allocation(allocation_id: str, payload: UpdateProgramAllocationRequest):
-    """
-    Allows Super Admin to set how many students a PR handles per program.
-    """
+    """Allows Super Admin to set how many students a PR handles per program."""
     for alloc in _ALLOCATIONS_STORE:
         if alloc["id"] == allocation_id:
             alloc["studentsPerPR"] = max(1, payload.studentsPerPR)

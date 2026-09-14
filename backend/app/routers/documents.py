@@ -37,6 +37,15 @@ def _get_owned_document(document_id: int, teacher: User, db: Session) -> Documen
     if doc_via_student:
         return doc_via_student
 
+    # Check if this teacher is the assigned in-charge faculty for a PR-initiated request
+    doc_via_assignment = (
+        db.query(Document)
+        .filter(Document.id == document_id, Document.incharge_faculty_id == teacher.id)
+        .first()
+    )
+    if doc_via_assignment:
+        return doc_via_assignment
+
     raise HTTPException(status_code=404, detail="Document not found")
 
 

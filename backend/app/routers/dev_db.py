@@ -1,7 +1,7 @@
 import json
 import time
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import (
     MetaData,
@@ -18,10 +18,15 @@ from sqlalchemy import (
 
 from app.auth_utils import get_password_hash
 from app.database import engine
+from app.dependencies.auth import get_current_admin
 from app.logging_config import get_logger
 
 logger = get_logger("placify.dev_db")
-router = APIRouter(prefix="/api/v1/dev/db", tags=["dev_db"])
+router = APIRouter(
+    prefix="/api/v1/dev/db",
+    tags=["dev_db"],
+    dependencies=[Depends(get_current_admin)],
+)
 
 
 class QueryRequest(BaseModel):

@@ -39,7 +39,7 @@ import {
   updateProgramCapacity,
   resetProgramAllocationsToDefault,
 } from "@/shared/lib/pr-cohort-config";
-import { api } from "@/shared/lib/api";
+import { api, EvalMetrics } from "@/shared/lib/api";
 
 interface AdminOverviewPageProps {
   onNavigate: (viewId: string) => void;
@@ -69,6 +69,25 @@ export const AdminOverviewPage: React.FC<AdminOverviewPageProps> = ({ onNavigate
       }
     };
     fetchAllocations();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Extraction accuracy / fraud precision evals — no new infra, plain SQL
+  // aggregation surfaced via GET /admin/eval-metrics.
+  const [evalMetrics, setEvalMetrics] = useState<EvalMetrics | null>(null);
+  const [evalMetricsError, setEvalMetricsError] = useState<string | null>(null);
+  useEffect(() => {
+    let isMounted = true;
+    api
+      .getEvalMetrics()
+      .then((data) => {
+        if (isMounted) setEvalMetrics(data);
+      })
+      .catch((err) => {
+        if (isMounted) setEvalMetricsError(err instanceof Error ? err.message : "Failed to load eval metrics");
+      });
     return () => {
       isMounted = false;
     };
@@ -621,6 +640,89 @@ export const AdminOverviewPage: React.FC<AdminOverviewPageProps> = ({ onNavigate
               </div>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Extraction & Fraud Evals — real, DB-backed metrics (admin-only endpoint) */}
+      <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs">
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-4">
+            <div className="flex items-center gap-2.5">
+              <ShieldAlert className="w-5 h-5 text-amber-600" />
+              <div>
+                <h3 className="font-semibold text-sm text-slate-900 dark:text-white">
+                  Extraction & Fraud Evals
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Accuracy computed from human edits; fraud precision from reviewer labels
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {evalMetricsError && (
+            <p className="text-xs text-rose-600 dark:text-rose-400">{evalMetricsError}</p>
+          )}
+
+          {evalMetrics && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                  <div className="text-[10px] text-slate-500 uppercase font-semibold">Documents Reviewed</div>
+                  <div className="text-xl font-bold text-slate-900 dark:text-white mt-1">
+                    {evalMetrics.total_documents}
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                  <div className="text-[10px] text-slate-500 uppercase font-semibold">Extraction Accuracy</div>
+                  <div className="text-xl font-bold text-slate-900 dark:text-white mt-1">
+                    {evalMetrics.extraction_accuracy != null
+                      ? `${Math.round(evalMetrics.extraction_accuracy * 100)}%`
+                      : "—"}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    {evalMetrics.edited_documents} of {evalMetrics.total_documents} needed edits
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                  <div className="text-[10px] text-slate-500 uppercase font-semibold">Fraud Flags Labeled</div>
+                  <div className="text-xl font-bold text-slate-900 dark:text-white mt-1">
+                    {evalMetrics.fraud_flags_labeled}
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    {evalMetrics.fraud_flags_confirmed} confirmed, {evalMetrics.fraud_flags_false_positive} false positive
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                  <div className="text-[10px] text-slate-500 uppercase font-semibold">Fraud Precision</div>
+                  <div className="text-xl font-bold text-slate-900 dark:text-white mt-1">
+                    {evalMetrics.fraud_precision != null ? `${Math.round(evalMetrics.fraud_precision * 100)}%` : "—"}
+                  </div>
+                </div>
+              </div>
+
+              {Object.values(evalMetrics.field_change_counts).some((v) => v > 0) && (
+                <div className="pt-1">
+                  <div className="text-[10px] text-slate-500 uppercase font-semibold mb-2">
+                    Most-Corrected Fields
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(evalMetrics.field_change_counts)
+                      .filter(([, count]) => count > 0)
+                      .sort(([, a], [, b]) => b - a)
+                      .map(([field, count]) => (
+                        <span
+                          key={field}
+                          className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/60"
+                        >
+                          {field.replace(/_/g, " ")} · {count}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
 

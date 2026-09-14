@@ -1,21 +1,47 @@
 import os
 import json
 import random
+from datetime import date, datetime, timedelta
 from typing import Dict, Any, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.logging_config import get_logger
 
 logger = get_logger("placify.gemini")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
+_FIELD_NAMES = ("student_name", "company", "package", "role", "offer_type", "joining_date")
+
+
 class ExtractionResult(BaseModel):
     student_name: str
     company: str
-    package: Optional[float] = None  # LPA or numerical package
+    package: Optional[float] = Field(default=None, ge=0)  # LPA or numerical package
     role: Optional[str] = None
     offer_type: Optional[str] = None  # Full-time, Internship, PPO
+    joining_date: Optional[str] = None  # ISO "YYYY-MM-DD" if the document states one
     confidence: float = Field(default=0.95, ge=0.0, le=1.0)
+    # Per-field confidence (0-1), e.g. {"student_name": 0.98, "company": 0.9}. Optional —
+    # only populated when the extracting provider actually reports it; UI falls back to
+    # the overall `confidence` for any field missing here.
+    field_confidence: Optional[Dict[str, float]] = None
+
+    @field_validator("joining_date")
+    @classmethod
+    def _sane_joining_date(cls, v: Optional[str]) -> Optional[str]:
+        if not v:
+            return v
+        try:
+            parsed = datetime.strptime(v, "%Y-%m-%d").date()
+        except ValueError:
+            logger.warning(f"Extracted joining_date '{v}' is not a valid YYYY-MM-DD date; dropping it.")
+            return None
+        today = date.today()
+        if parsed < today - timedelta(days=3 * 365) or parsed > today + timedelta(days=3 * 365):
+            logger.warning(f"Extracted joining_date '{v}' is implausibly far from today; dropping it.")
+            return None
+        return v
+
 
 EXTRACTION_PROMPT = """
 You are an expert HR document parser for placement offer letters.
@@ -26,10 +52,15 @@ Analyze the attached offer letter document and extract the following structured 
   "package": 12.5,  // Total annual package / CTC in LPA as a float if available, or null
   "role": "Job Title / Role",
   "offer_type": "Full-time" // "Full-time", "Internship", or "PPO",
-  "confidence": 0.95 // Float score between 0.0 and 1.0 indicating extraction confidence
+  "joining_date": "2026-07-01", // ISO YYYY-MM-DD if the document states a joining date, else null
+  "confidence": 0.95, // Float score between 0.0 and 1.0 indicating overall extraction confidence
+  "field_confidence": {  // Your confidence in each individual field, 0.0-1.0
+    "student_name": 0.95, "company": 0.95, "package": 0.9, "role": 0.9, "offer_type": 0.9
+  }
 }
 Respond ONLY with the raw JSON object and no markdown formatting or extra text.
 """
+
 
 class GeminiAdapter:
     """
@@ -74,21 +105,24 @@ class GeminiAdapter:
                             f"do not assume they are correct):\n{hint_lines}\n"
                         )
 
+                mime_type = 'application/pdf' if filename.lower().endswith('.pdf') else 'image/jpeg'
+
                 # Handle GenAI execution
                 if hasattr(self._client, 'models'):
-                    # new google-genai SDK
+                    # new google-genai SDK — needs a real Part, not a raw dict
+                    from google.genai import types
                     response = self._client.models.generate_content(
                         model='gemini-2.5-pro',
                         contents=[
-                            {'mime_type': 'application/pdf' if filename.endswith('.pdf') else 'image/jpeg', 'data': file_bytes},
-                            prompt
+                            types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
+                            prompt,
                         ]
                     )
                     text = response.text
                 else:
                     # legacy generativeai SDK
                     response = self._client.generate_content([
-                        {'mime_type': 'application/pdf' if filename.endswith('.pdf') else 'image/jpeg', 'data': file_bytes},
+                        {'mime_type': mime_type, 'data': file_bytes},
                         prompt
                     ])
                     text = response.text
@@ -104,14 +138,28 @@ class GeminiAdapter:
             except Exception as e:
                 logger.warning(f"Gemini AI extraction error: {e}. Falling back to deterministic heuristic.")
 
-        # Deterministic Mock Fallback for local development / testing
+        return self._mock_extract(filename, hint)
+
+    def _mock_extract(self, filename: str, hint: Optional[Dict[str, Any]] = None) -> ExtractionResult:
+        """Deterministic mock fallback for local development / testing / no configured key."""
         sample_names = ["Aarav Sharma", "Priya Patel", "Rohan Verma", "Ananya Iyer", "Vikram Singh"]
         sample_companies = ["Google India", "Microsoft", "Amazon", "Goldman Sachs", "TCS Digital"]
         sample_roles = ["Software Development Engineer", "Data Analyst", "Product Analyst", "Backend Engineer"]
         sample_packages = [12.0, 18.5, 24.0, 32.0, 8.5]
-        
+
         name_idx = abs(hash(filename)) % len(sample_names)
         hint = hint or {}
+
+        # A hint-matched field is a known-correct value the mock is echoing back (not
+        # fabricated), so it earns high confidence; a purely fabricated field earns low
+        # confidence so downstream UI/eval code can tell mock output from a real read.
+        field_confidence = {
+            "student_name": 0.95 if hint.get("student_name") else 0.4,
+            "company": 0.95 if hint.get("company") else 0.4,
+            "role": 0.95 if hint.get("role") else 0.4,
+            "package": 0.4,  # never hinted — always fabricated in mock mode
+            "offer_type": 0.95 if hint.get("offer_type") else 0.5,
+        }
 
         return ExtractionResult(
             student_name=hint.get("student_name") or sample_names[name_idx],
@@ -119,7 +167,9 @@ class GeminiAdapter:
             package=sample_packages[name_idx % len(sample_packages)],
             role=hint.get("role") or sample_roles[name_idx % len(sample_roles)],
             offer_type=hint.get("offer_type") or "Full-time",
-            confidence=0.96
+            joining_date=None,
+            confidence=0.96,
+            field_confidence=field_confidence,
         )
 
 gemini_adapter = GeminiAdapter()

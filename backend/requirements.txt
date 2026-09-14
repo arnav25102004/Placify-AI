@@ -14,6 +14,11 @@ redis
 google-genai
 google-api-python-client
 google-auth
+openai
+pytesseract
+pdf2image
+Pillow
+mcp
 pytest
 httpx
 

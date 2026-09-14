@@ -17,6 +17,7 @@ from app.models.user import User
 from app.schemas.batch import BatchCreateResponse, BatchSummary
 from app.schemas.document import DocumentStatus
 from app.services.drive_adapter import drive_adapter
+from app.services.upload_guardrails import validate_upload
 from app.tasks.extraction import extract_document, process_document_extraction
 
 logger = get_logger("placify.batches")
@@ -53,9 +54,9 @@ def create_batch(
 
     for upload_file in files:
         content = upload_file.file.read()
-        file_hash = hashlib.sha256(content).hexdigest()
         filename = upload_file.filename or "offer_letter.pdf"
-        content_type = upload_file.content_type or "application/pdf"
+        content_type = validate_upload(content, filename)
+        file_hash = hashlib.sha256(content).hexdigest()
 
         # Stream/upload raw file to Google Drive per ADR-003 & services.md
         drive_res = drive_adapter.upload_file(content, filename, content_type)

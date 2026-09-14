@@ -90,6 +90,10 @@ def ensure_document_columns(target_engine=None):
                 "profile_match_score": "NUMERIC",
                 "fraud_flags": "TEXT",
                 "discrepancies": "TEXT",
+                "field_confidence": "TEXT",
+                "discrepancy_summary": "TEXT",
+                "joining_date": "VARCHAR",
+                "fraud_flag_outcome": "VARCHAR",
             }
             with eng.begin() as conn:
                 for col_name, col_type in expected_cols.items():

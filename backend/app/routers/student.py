@@ -12,6 +12,7 @@ from app.models.user import User
 from app.schemas.document import DocumentStatus
 from app.schemas.student import SeniorProfile, CreateSeniorRequest, RecruitingCompany
 from app.services.drive_adapter import drive_adapter
+from app.services.upload_guardrails import validate_upload
 from app.tasks.extraction import extract_document, process_document_extraction
 
 logger = get_logger("placify.student")
@@ -402,12 +403,9 @@ def submit_offer_letter(
         raise HTTPException(status_code=400, detail="Offer letter file is required")
 
     content = file.file.read()
-    if not content:
-        raise HTTPException(status_code=400, detail="File content cannot be empty")
-
-    file_hash = hashlib.sha256(content).hexdigest()
     filename = file.filename or "student_offer_letter.pdf"
-    content_type = file.content_type or "application/pdf"
+    content_type = validate_upload(content, filename)
+    file_hash = hashlib.sha256(content).hexdigest()
 
     # Stream/upload raw file to Google Drive
     drive_res = drive_adapter.upload_file(content, filename, content_type)

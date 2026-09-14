@@ -1,6 +1,7 @@
+import json
 from decimal import Decimal
-from typing import Optional
-from pydantic import BaseModel
+from typing import Dict, List, Optional
+from pydantic import BaseModel, field_validator
 
 
 class DocumentStatus(BaseModel):
@@ -14,13 +15,33 @@ class DocumentStatus(BaseModel):
         from_attributes = True
 
 
+def _parse_json_field(v):
+    if v is None or isinstance(v, (dict, list)):
+        return v
+    try:
+        return json.loads(v)
+    except (TypeError, ValueError):
+        return None
+
+
 class ExtractionDetail(BaseModel):
     student_name: str
     company: str
     package: Optional[Decimal]
     role: Optional[str]
     offer_type: Optional[str]
+    joining_date: Optional[str] = None
     confidence: Decimal
+    field_confidence: Optional[Dict[str, float]] = None
+    authenticity_score: Optional[Decimal] = None
+    profile_match_score: Optional[Decimal] = None
+    fraud_flags: Optional[List[str]] = None
+    discrepancies: Optional[List[str]] = None
+    discrepancy_summary: Optional[str] = None
+
+    _parse_field_confidence = field_validator("field_confidence", mode="before")(_parse_json_field)
+    _parse_fraud_flags = field_validator("fraud_flags", mode="before")(_parse_json_field)
+    _parse_discrepancies = field_validator("discrepancies", mode="before")(_parse_json_field)
 
     class Config:
         from_attributes = True
@@ -47,3 +68,4 @@ class VerifyActionRequest(BaseModel):
     package: Optional[Decimal] = None
     role: Optional[str] = None
     offer_type: Optional[str] = None
+    fraud_flag_outcome: Optional[str] = None  # "confirmed" | "false_positive" — Phase 5 evals

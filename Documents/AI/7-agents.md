@@ -9,7 +9,7 @@ Defines the multi-agent system orchestrating document verification, fraud detect
 - Power smart junior-to-senior referral matching and automate audit compliance and College ERP export.
 
 ## Scope
-Governs the AI processing pipeline operating inside backend background workers (Celery) and event hooks. The LLM integration uses an OpenAI-compatible interface supporting NVIDIA NIM, OpenRouter, and Gemini.
+Governs the AI processing pipeline operating inside backend background workers (Celery) and event hooks. The LLM integration (`app/services/llm_client.py`) supports Gemini natively plus NVIDIA NIM and Groq via an OpenAI-compatible interface, with a deterministic mock fallback when no provider is configured. Agents 6 (Referral Matching) and the RAG-based matching it describes are design-only — not yet implemented (see `Documents/next-implementation-plan.md`).
 
 ## High-Level Overview
 
@@ -114,13 +114,13 @@ Governs the AI processing pipeline operating inside backend background workers (
 - **Trigger:** In-charge Faculty clicks "Approve & Commit".
 - **Responsibilities:**
   - Validates all business invariants before persistent storage.
-  - Formats data into university ERP-compliant JSON/CSV payload and dispatches via REST push.
-  - Records an append-only row in `audit_logs` capturing reviewer ID, timestamp, original AI extraction, teacher edits, and ERP transaction response.
-- **Outputs:** Confirmed ERP transaction ID and immutable audit log entry.
+  - Formats data into a university ERP-compliant JSON/CSV payload and makes it available for a Coordinator/Admin to download and import into the ERP themselves — export is human-mediated, not an automatic push to a live ERP endpoint (no college ERP integration has been authorized; see `POST /batches/{id}/export`).
+  - Records an append-only row in `audit_logs` capturing reviewer ID, timestamp, original AI extraction, and teacher edits.
+- **Outputs:** A downloadable ERP-ready export file and an immutable audit log entry.
 
 ---
 
 ## Design Principles
 1. **Parallel Execution:** Agents 2 (Extraction) and 3 (Fraud Detection) run concurrently inside Celery workers to minimize latency.
 2. **Strict Privacy Isolation:** Document inspection outputs and raw files are accessible only to authorized PRs, In-charge Faculty, and Placement Admins. Junior students querying Agent 6 never receive raw offer letters or sensitive personal data.
-3. **Provider Agility:** All LLM calls route through a unified OpenAI-compatible client, allowing zero-code provider switching between NVIDIA NIM, OpenRouter, and Gemini via configuration.
+3. **Provider Agility:** All LLM calls route through a unified client (`app/services/llm_client.py`) trying providers in priority order via the `LLM_PROVIDER_PRIORITY` env var — Gemini (native SDK) and NVIDIA NIM/Groq (OpenAI-compatible) today, config-only to add more. Falls back to a deterministic mock when no provider is configured, so the pipeline never hard-fails.

@@ -20,6 +20,7 @@ from app.schemas.pr import (
     UpdateProgramAllocationRequest,
 )
 from app.services.drive_adapter import drive_adapter
+from app.services.upload_guardrails import validate_upload
 from app.tasks.extraction import extract_document, process_document_extraction
 
 logger = get_logger("placify.pr")
@@ -183,12 +184,9 @@ def request_offer(
             raise HTTPException(status_code=400, detail="incharge_faculty_id must reference a valid teacher")
 
     content = file.file.read()
-    if not content:
-        raise HTTPException(status_code=400, detail="Offer letter file cannot be empty")
-
-    file_hash = hashlib.sha256(content).hexdigest()
     filename = file.filename or "offer_letter.pdf"
-    content_type = file.content_type or "application/pdf"
+    content_type = validate_upload(content, filename)
+    file_hash = hashlib.sha256(content).hexdigest()
 
     drive_res = drive_adapter.upload_file(content, filename, content_type)
 

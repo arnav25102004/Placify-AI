@@ -105,7 +105,14 @@ export interface ExtractionData {
   package?: number;
   role?: string;
   offer_type?: string;
+  joining_date?: string | null;
   confidence: number;
+  field_confidence?: Record<string, number> | null;
+  authenticity_score?: number | null;
+  profile_match_score?: number | null;
+  fraud_flags?: string[] | null;
+  discrepancies?: string[] | null;
+  discrepancy_summary?: string | null;
 }
 
 export interface DocumentDetailResponse {
@@ -126,6 +133,25 @@ export interface VerifyActionPayload {
   package?: number;
   role?: string;
   offer_type?: string;
+  fraud_flag_outcome?: "confirmed" | "false_positive";
+}
+
+export interface PriorCorrection {
+  document_id: number;
+  changed_fields: string[];
+  corrected_role?: string | null;
+  corrected_package?: number | null;
+}
+
+export interface EvalMetrics {
+  total_documents: number;
+  edited_documents: number;
+  extraction_accuracy: number | null;
+  field_change_counts: Record<string, number>;
+  fraud_flags_labeled: number;
+  fraud_flags_confirmed: number;
+  fraud_flags_false_positive: number;
+  fraud_precision: number | null;
 }
 
 export interface ManagedStudent {
@@ -444,6 +470,78 @@ class ApiClient {
       throw new Error(err.detail || "Verification failed");
     }
 
+    return res.json();
+  }
+
+  /**
+   * Streams the discrepancy agent's explanation token-by-token via SSE. Uses fetch +
+   * a manual reader (not EventSource) since EventSource can't send an Authorization
+   * header.
+   */
+  public async streamDiscrepancy(
+    documentId: number,
+    onChunk: (delta: string) => void,
+    onDone?: () => void,
+    onError?: (message: string) => void
+  ): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/documents/${documentId}/discrepancy-stream`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok || !res.body) {
+      onError?.("Failed to start discrepancy stream");
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split("\n\n");
+      buffer = events.pop() || "";
+
+      for (const evt of events) {
+        let eventType = "message";
+        let data = "";
+        for (const line of evt.split("\n")) {
+          if (line.startsWith("event:")) eventType = line.slice(6).trim();
+          else if (line.startsWith("data:")) data = line.slice(5).trim();
+        }
+        if (eventType === "done") {
+          onDone?.();
+          return;
+        }
+        if (data) {
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.error) onError?.(parsed.error);
+            else if (parsed.delta) onChunk(parsed.delta);
+          } catch {
+            // ignore malformed SSE chunk
+          }
+        }
+      }
+    }
+    onDone?.();
+  }
+
+  public async getPriorCorrections(documentId: number): Promise<PriorCorrection[]> {
+    const res = await fetch(`${API_BASE_URL}/documents/${documentId}/prior-corrections`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to fetch prior corrections");
+    const data = await res.json();
+    return data.corrections || [];
+  }
+
+  public async getEvalMetrics(): Promise<EvalMetrics> {
+    const res = await fetch(`${API_BASE_URL}/admin/eval-metrics`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to fetch eval metrics");
     return res.json();
   }
 

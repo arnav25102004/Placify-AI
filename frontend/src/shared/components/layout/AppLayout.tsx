@@ -233,17 +233,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               )}
             </div>
 
-            {/* Collapse Toggle Button (Desktop) */}
-            <button
-              onClick={toggleSidebar}
-              className={`hidden lg:flex p-1.5 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
-                isCollapsed ? "mx-auto mt-2" : ""
-              }`}
-              title={isCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
-            >
-              {isCollapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-            </button>
-
             {/* Mobile close button */}
             <button
               onClick={() => setMobileMenuOpen(false)}
@@ -434,13 +423,24 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Desktop Sidebar Toggle in Header */}
+            {/* Desktop Sidebar Toggle in Header (Enhanced) */}
             <button
               onClick={toggleSidebar}
-              className="hidden lg:flex p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+              className={`hidden lg:flex items-center gap-1.5 h-9 px-2.5 rounded-xl border transition-all duration-200 cursor-pointer text-xs font-semibold ${
+                isCollapsed
+                  ? "bg-maroon-50 dark:bg-maroon-950/60 border-maroon-200 dark:border-maroon-900/60 text-maroon-900 dark:text-maroon-200 shadow-2xs"
+                  : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+              title={isCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
             >
-              <PanelLeft className="w-4 h-4" />
+              {isCollapsed ? (
+                <PanelLeft className="w-4 h-4 text-maroon-900 dark:text-maroon-300 transition-transform duration-200" />
+              ) : (
+                <PanelLeftClose className="w-4 h-4 transition-transform duration-200" />
+              )}
+              <span className="hidden xl:inline text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                {isCollapsed ? "Sidebar" : "Collapse"}
+              </span>
             </button>
 
             {/* Top Search Bar */}

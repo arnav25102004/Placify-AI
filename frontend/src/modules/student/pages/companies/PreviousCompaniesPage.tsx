@@ -6,34 +6,134 @@ import { Badge } from "@/shared/components/ui/badge";
 import {
   Building2,
   Search,
-  Filter,
   TrendingUp,
-  Award,
   Users,
   Calendar,
   ExternalLink,
   Briefcase,
-  CheckCircle,
+  CheckCircle2,
   GraduationCap,
   Sparkles,
-  ArrowUpRight,
+  ArrowRight,
   ShieldCheck,
-  Compass
+  Compass,
+  LayoutGrid,
+  List,
+  X,
+  Layers,
 } from "lucide-react";
 
 interface PreviousCompaniesPageProps {
   onNavigateToSeniors?: (companyName?: string) => void;
 }
 
+// Curated high-res SVG and brand logos for recruiters
+const COMPANY_LOGOS: Record<
+  string,
+  { logo: string; domain?: string; darkInvert?: boolean }
+> = {
+  "Google India": {
+    logo: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg",
+    domain: "google.com",
+  },
+  Microsoft: {
+    logo: "https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg",
+    domain: "microsoft.com",
+  },
+  Amazon: {
+    logo: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg",
+    domain: "amazon.com",
+  },
+  Atlassian: {
+    logo: "https://upload.wikimedia.org/wikipedia/commons/8/82/Atlassian-logo.svg",
+    domain: "atlassian.com",
+  },
+  "Goldman Sachs": {
+    logo: "https://upload.wikimedia.org/wikipedia/commons/6/61/Goldman_Sachs.svg",
+    domain: "goldmansachs.com",
+  },
+  "Cisco Systems": {
+    logo: "https://upload.wikimedia.org/wikipedia/commons/0/08/Cisco_logo_blue_2016.svg",
+    domain: "cisco.com",
+  },
+  Oracle: {
+    logo: "https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg",
+    domain: "oracle.com",
+  },
+  "JP Morgan Chase & Co.": {
+    logo: "https://upload.wikimedia.org/wikipedia/commons/a/af/J_P_Morgan_Logo_2008_1.svg",
+    domain: "jpmorgan.com",
+  },
+  "Deloitte Digital": {
+    logo: "https://upload.wikimedia.org/wikipedia/commons/2/2b/Deloitte.svg",
+    domain: "deloitte.com",
+  },
+  "TCS Digital & Prime": {
+    logo: "https://upload.wikimedia.org/wikipedia/commons/b/b1/Tata_Consultancy_Services_Logo.svg",
+    domain: "tcs.com",
+  },
+};
+
+const CompanyLogo: React.FC<{
+  name: string;
+  className?: string;
+  size?: "sm" | "md" | "lg";
+}> = ({ name, className = "", size = "md" }) => {
+  const [imgError, setImgError] = useState(false);
+
+  // Match company logo by substring or exact name
+  const matchedKey = Object.keys(COMPANY_LOGOS).find(
+    (k) =>
+      name.toLowerCase().includes(k.toLowerCase()) ||
+      k.toLowerCase().includes(name.toLowerCase())
+  );
+  const logoInfo = matchedKey ? COMPANY_LOGOS[matchedKey] : null;
+
+  const sizeClasses = {
+    sm: "w-8 h-8 rounded-lg p-1 text-xs",
+    md: "w-12 h-12 rounded-xl p-1.5 text-sm",
+    lg: "w-14 h-14 rounded-2xl p-2 text-base",
+  }[size];
+
+  if (logoInfo && !imgError) {
+    return (
+      <div
+        className={`${sizeClasses} bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex items-center justify-center shrink-0 overflow-hidden ${className}`}
+      >
+        <img
+          src={logoInfo.logo}
+          alt={`${name} logo`}
+          className={`max-h-full max-w-full object-contain ${
+            logoInfo.darkInvert ? "dark:brightness-0 dark:invert" : ""
+          }`}
+          onError={() => setImgError(true)}
+          loading="lazy"
+        />
+      </div>
+    );
+  }
+
+  // Fallback to domain logo or initials
+  return (
+    <div
+      className={`${sizeClasses} bg-gradient-to-br from-maroon-900 to-slate-800 text-white font-bold flex items-center justify-center shadow-xs shrink-0 ${className}`}
+    >
+      {name.slice(0, 2).toUpperCase()}
+    </div>
+  );
+};
+
 export const PreviousCompaniesPage: React.FC<PreviousCompaniesPageProps> = ({
-  onNavigateToSeniors
+  onNavigateToSeniors,
 }) => {
   const [companies, setCompanies] = useState<RecruitingCompany[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIndustry, setSelectedIndustry] = useState("all");
   const [selectedTier, setSelectedTier] = useState("all");
-  const [selectedCompany, setSelectedCompany] = useState<RecruitingCompany | null>(null);
+  const [selectedCompany, setSelectedCompany] =
+    useState<RecruitingCompany | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const loadCompanies = async () => {
     setIsLoading(true);
@@ -60,9 +160,10 @@ export const PreviousCompaniesPage: React.FC<PreviousCompaniesPageProps> = ({
     loadCompanies();
   };
 
-  // Get distinct list of industries and tiers from current or default set
-  const allIndustries = Array.from(new Set(companies.map((c) => c.industry))).filter(Boolean);
-  const allTiers = Array.from(new Set(companies.map((c) => c.tier))).filter(Boolean);
+  // Distinct industries and tiers
+  const allIndustries = Array.from(
+    new Set(companies.map((c) => c.industry))
+  ).filter(Boolean);
 
   const getTierColor = (tier: string) => {
     if (tier.toLowerCase().includes("super dream")) {
@@ -75,11 +176,21 @@ export const PreviousCompaniesPage: React.FC<PreviousCompaniesPageProps> = ({
   };
 
   // Aggregate metrics
-  const totalOffersCount = companies.reduce((acc, c) => acc + c.total_offers, 0);
-  const highestPackageAll = companies.length > 0 ? Math.max(...companies.map((c) => c.highest_package_lpa)) : 0;
-  const avgPackageAll = companies.length > 0
-    ? (companies.reduce((acc, c) => acc + c.avg_package_lpa, 0) / companies.length).toFixed(1)
-    : "0.0";
+  const totalOffersCount = companies.reduce(
+    (acc, c) => acc + c.total_offers,
+    0
+  );
+  const highestPackageAll =
+    companies.length > 0
+      ? Math.max(...companies.map((c) => c.highest_package_lpa))
+      : 0;
+  const avgPackageAll =
+    companies.length > 0
+      ? (
+          companies.reduce((acc, c) => acc + c.avg_package_lpa, 0) /
+          companies.length
+        ).toFixed(1)
+      : "0.0";
 
   return (
     <div className="space-y-6">
@@ -94,8 +205,39 @@ export const PreviousCompaniesPage: React.FC<PreviousCompaniesPageProps> = ({
             Previous Year Recruiters
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
-            Explore companies that visited campus in past recruitment drives, historical CTC packages, selection processes, and eligibility criteria.
+            Explore companies that visited campus in past recruitment drives,
+            historical CTC packages, selection processes, and eligibility criteria.
           </p>
+        </div>
+
+        {/* View Mode Switcher */}
+        <div className="flex items-center gap-1 self-start sm:self-auto bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+          <button
+            type="button"
+            onClick={() => setViewMode("grid")}
+            aria-label="Grid View"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              viewMode === "grid"
+                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span>Grid</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("list")}
+            aria-label="List View"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              viewMode === "list"
+                ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <List className="w-3.5 h-3.5" />
+            <span>List</span>
+          </button>
         </div>
       </div>
 
@@ -200,14 +342,16 @@ export const PreviousCompaniesPage: React.FC<PreviousCompaniesPageProps> = ({
             <Button
               type="submit"
               size="sm"
-              className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shrink-0"
+              className="h-10 px-4 rounded-xl bg-maroon-900 hover:bg-maroon-800 text-white text-xs font-semibold shrink-0"
             >
               Apply Filter
             </Button>
           </div>
         </form>
 
-        {(selectedIndustry !== "all" || selectedTier !== "all" || searchQuery) && (
+        {(selectedIndustry !== "all" ||
+          selectedTier !== "all" ||
+          searchQuery) && (
           <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
             <span>Active filters:</span>
             {searchQuery && (
@@ -240,13 +384,13 @@ export const PreviousCompaniesPage: React.FC<PreviousCompaniesPageProps> = ({
         )}
       </div>
 
-      {/* Companies Grid */}
+      {/* Main Content Area */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[1, 2, 3, 4, 5, 6].map((idx) => (
             <div
               key={idx}
-              className="h-72 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 animate-pulse"
+              className="h-44 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 animate-pulse"
             />
           ))}
         </div>
@@ -267,30 +411,30 @@ export const PreviousCompaniesPage: React.FC<PreviousCompaniesPageProps> = ({
               setSelectedTier("all");
               loadCompanies();
             }}
-            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white text-xs"
+            className="mt-4 bg-maroon-900 hover:bg-maroon-800 text-white text-xs"
           >
             Reset Filters
           </Button>
         </div>
-      ) : (
+      ) : viewMode === "grid" ? (
+        /* Minimal Responsive Grid View */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {companies.map((company) => (
             <div
               key={company.id}
-              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800/90 hover:border-blue-500/50 dark:hover:border-blue-500/40 transition-all p-5 flex flex-col justify-between shadow-xs hover:shadow-md group"
+              onClick={() => setSelectedCompany(company)}
+              className="group relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800/90 hover:border-maroon-900/50 dark:hover:border-maroon-800/60 p-5 hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between"
             >
               <div>
-                {/* Header: Company Name & Tier */}
+                {/* Top Row: Brand Logo, Name & Tier Badge */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 dark:from-blue-900/30 dark:to-indigo-900/30 border border-blue-200/50 dark:border-blue-800/50 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-base shadow-xs shrink-0">
-                      {company.name.slice(0, 2).toUpperCase()}
-                    </div>
+                    <CompanyLogo name={company.name} size="md" />
                     <div>
-                      <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
                         {company.name}
                       </h3>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
                         {company.industry}
                       </div>
                     </div>
@@ -305,166 +449,249 @@ export const PreviousCompaniesPage: React.FC<PreviousCompaniesPageProps> = ({
                   </span>
                 </div>
 
-                {/* Compensation & Offers Row */}
-                <div className="grid grid-cols-2 gap-2 mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                {/* Minimal Stat Metric Strip */}
+                <div className="grid grid-cols-3 gap-2 mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/70">
                   <div>
                     <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider block">
                       Avg CTC
                     </span>
                     <span className="text-sm font-bold text-slate-900 dark:text-white">
-                      ₹{company.avg_package_lpa} LPA
+                      ₹{company.avg_package_lpa}L
                     </span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider block">
-                      Highest CTC
+                      Highest
                     </span>
                     <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                      ₹{company.highest_package_lpa} LPA
+                      ₹{company.highest_package_lpa}L
                     </span>
                   </div>
-                  <div className="col-span-2 pt-2 mt-1 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <Users className="w-3.5 h-3.5 text-slate-400" />
-                      {company.total_offers} campus offers made
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider block">
+                      Offers
                     </span>
-                    <span className="text-[10px] font-mono text-slate-400">
-                      Visits: {company.years_visited.join(", ")}
+                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                      {company.total_offers}
                     </span>
                   </div>
-                </div>
-
-                {/* Roles Offered */}
-                <div className="mt-3">
-                  <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
-                    <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-                    Offered Roles
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {company.roles.map((role, rIdx) => (
-                      <span
-                        key={rIdx}
-                        className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium"
-                      >
-                        {role}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Eligibility Criteria */}
-                <div className="mt-3 text-xs text-slate-600 dark:text-slate-300">
-                  <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                    Eligibility
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 bg-emerald-50/50 dark:bg-emerald-950/20 p-2 rounded-lg border border-emerald-100 dark:border-emerald-900/40">
-                    {company.eligibility}
-                  </p>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setSelectedCompany(company)}
-                  className="flex-1 text-xs h-8 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
-                >
-                  Process & Rounds
-                </Button>
-
-                {onNavigateToSeniors && (
-                  <Button
-                    size="sm"
-                    onClick={() => onNavigateToSeniors(company.name)}
-                    className="text-xs h-8 bg-blue-600 hover:bg-blue-700 text-white font-medium gap-1 px-3"
-                  >
-                    <GraduationCap className="w-3.5 h-3.5" />
-                    Seniors
-                  </Button>
-                )}
+              {/* Minimal Card Footer */}
+              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <span className="text-[11px] font-medium text-slate-400">
+                  Visits: {company.years_visited.slice(-2).join(", ")}
+                </span>
+                <span className="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-400 text-xs group-hover:translate-x-0.5 transition-transform">
+                  Details <ArrowRight className="w-3.5 h-3.5" />
+                </span>
               </div>
             </div>
           ))}
         </div>
+      ) : (
+        /* Compact List / Table View */
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+                  <th className="py-3 px-4">Company</th>
+                  <th className="py-3 px-4">Tier</th>
+                  <th className="py-3 px-4">Avg CTC</th>
+                  <th className="py-3 px-4">Highest CTC</th>
+                  <th className="py-3 px-4">Offers</th>
+                  <th className="py-3 px-4">Drives</th>
+                  <th className="py-3 px-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {companies.map((company) => (
+                  <tr
+                    key={company.id}
+                    onClick={() => setSelectedCompany(company)}
+                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group"
+                  >
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-3">
+                        <CompanyLogo name={company.name} size="sm" />
+                        <div>
+                          <div className="font-bold text-slate-900 dark:text-white text-sm group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {company.name}
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            {company.industry}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${getTierColor(
+                          company.tier
+                        )}`}
+                      >
+                        {company.tier.split(" ")[0]}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 font-semibold text-slate-800 dark:text-slate-200">
+                      ₹{company.avg_package_lpa} LPA
+                    </td>
+                    <td className="py-3.5 px-4 font-bold text-blue-600 dark:text-blue-400">
+                      ₹{company.highest_package_lpa} LPA
+                    </td>
+                    <td className="py-3.5 px-4 font-semibold text-emerald-600 dark:text-emerald-400">
+                      {company.total_offers} offers
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-500">
+                      {company.years_visited.join(", ")}
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2.5 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 font-semibold gap-1"
+                      >
+                        View <ArrowRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
-      {/* Process & Selection Details Modal */}
+      {/* Comprehensive Click-to-Open Details Dialog Modal */}
       {selectedCompany && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            {/* Modal Header */}
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
-                  {selectedCompany.name.slice(0, 2).toUpperCase()}
-                </div>
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedCompany(null);
+          }}
+        >
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
+            {/* Modal Header Banner */}
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/30">
+              <div className="flex items-center gap-4">
+                <CompanyLogo name={selectedCompany.name} size="lg" />
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                    {selectedCompany.name} Recruitment Drive
-                  </h2>
-                  <div className="text-xs text-slate-500">
-                    {selectedCompany.industry} • {selectedCompany.tier}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                      {selectedCompany.name}
+                    </h2>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${getTierColor(
+                        selectedCompany.tier
+                      )}`}
+                    >
+                      {selectedCompany.tier}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-3">
+                    <span>{selectedCompany.industry}</span>
+                    {selectedCompany.website && (
+                      <a
+                        href={selectedCompany.website}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                      >
+                        Careers Portal <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
+
               <button
                 onClick={() => setSelectedCompany(null)}
-                aria-label="Close recruitment drive modal"
+                aria-label="Close recruitment modal"
                 className="p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
-              {/* Package Summary */}
-              <div className="grid grid-cols-3 gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80">
-                <div>
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Avg CTC</div>
-                  <div className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
-                    ₹{selectedCompany.avg_package_lpa} LPA
+            {/* Modal Scrollable Content */}
+            <div className="p-6 space-y-6 overflow-y-auto flex-1">
+              {/* Placement Compensation Statistics */}
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-emerald-500" />
+                  Campus Package & Hiring Statistics
+                </h4>
+                <div className="grid grid-cols-3 gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80">
+                  <div>
+                    <div className="text-[10px] text-slate-400 uppercase font-semibold">
+                      Average CTC
+                    </div>
+                    <div className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+                      ₹{selectedCompany.avg_package_lpa} LPA
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-slate-400 uppercase font-semibold">
+                      Highest CTC
+                    </div>
+                    <div className="text-lg font-bold text-blue-600 dark:text-blue-400 mt-0.5">
+                      ₹{selectedCompany.highest_package_lpa} LPA
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-slate-400 uppercase font-semibold">
+                      Total Hires
+                    </div>
+                    <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      {selectedCompany.total_offers} Placed
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Highest CTC</div>
-                  <div className="text-base font-bold text-blue-600 dark:text-blue-400 mt-0.5">
-                    ₹{selectedCompany.highest_package_lpa} LPA
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Total Recruited</div>
-                  <div className="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                    {selectedCompany.total_offers}
-                  </div>
+              </div>
+
+              {/* Roles Offered */}
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-blue-500" />
+                  Offered Profiles & Designations
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedCompany.roles.map((role, rIdx) => (
+                    <span
+                      key={rIdx}
+                      className="text-xs px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-medium border border-blue-200/60 dark:border-blue-800/60"
+                    >
+                      {role}
+                    </span>
+                  ))}
                 </div>
               </div>
 
               {/* Selection Process Timeline */}
               <div>
                 <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  Standard Selection Process & Rounds
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  Selection Process & Evaluation Rounds
                 </h4>
-                <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-blue-200 dark:before:bg-blue-900">
+                <div className="relative pl-6 space-y-3.5 before:absolute before:left-2.5 before:top-2.5 before:bottom-2.5 before:w-0.5 before:bg-blue-200 dark:before:bg-blue-900">
                   {selectedCompany.selection_process.map((round, rIdx) => (
                     <div key={rIdx} className="relative">
-                      <div className="absolute -left-6 top-0.5 w-4 h-4 rounded-full bg-blue-600 text-white font-bold text-[9px] flex items-center justify-center shadow-xs">
+                      <div className="absolute -left-6 top-1 w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shadow-xs">
                         {rIdx + 1}
                       </div>
-                      <div className="bg-white dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                      <div className="bg-white dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
                         <div className="font-semibold text-xs text-slate-900 dark:text-white">
                           Round {rIdx + 1}: {round}
                         </div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                           {rIdx === 0
-                            ? "Core aptitude, reasoning, and programming fundamentals on test portal."
-                            : rIdx === selectedCompany.selection_process.length - 1
+                            ? "Core aptitude, reasoning, and programming fundamentals on the test portal."
+                            : rIdx ===
+                              selectedCompany.selection_process.length - 1
                             ? "Cultural alignment, behavioural scenarios, leadership principles & compensation discussion."
-                            : "Data structures, problem solving, system design, and past project architecture."}
+                            : "Data structures, algorithms, problem solving, system design, and past project architecture."}
                         </div>
                       </div>
                     </div>
@@ -472,42 +699,37 @@ export const PreviousCompaniesPage: React.FC<PreviousCompaniesPageProps> = ({
                 </div>
               </div>
 
-              {/* Eligibility & Campus Years */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+              {/* Eligibility Criteria Callout */}
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   Campus Eligibility Criteria
                 </h4>
-                <div className="text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div className="text-xs text-slate-700 dark:text-slate-300 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 rounded-xl border border-emerald-200/60 dark:border-emerald-900/40">
                   {selectedCompany.eligibility}
                 </div>
               </div>
 
-              {/* Campus Drives Recorded */}
-              <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" />
-                  Campus Drive Batches: {selectedCompany.years_visited.join(", ")}
+              {/* Campus Drives Batches */}
+              <div className="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <Calendar className="w-4 h-4 text-slate-400" />
+                  Past Campus Drives: {selectedCompany.years_visited.join(", ")}
                 </span>
-                {selectedCompany.website && (
-                  <a
-                    href={selectedCompany.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline font-semibold"
-                  >
-                    Careers Site <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
+                <span className="flex items-center gap-1.5 text-slate-400">
+                  <Layers className="w-4 h-4" />
+                  {selectedCompany.selection_process.length} Assessment Rounds
+                </span>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setSelectedCompany(null)}
-                className="text-xs"
+                className="text-xs rounded-xl"
               >
                 Close
               </Button>
@@ -519,9 +741,9 @@ export const PreviousCompaniesPage: React.FC<PreviousCompaniesPageProps> = ({
                     setSelectedCompany(null);
                     onNavigateToSeniors(compName);
                   }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5"
+                  className="bg-maroon-900 hover:bg-maroon-800 text-white text-xs gap-1.5 rounded-xl font-medium"
                 >
-                  <GraduationCap className="w-3.5 h-3.5" />
+                  <GraduationCap className="w-4 h-4" />
                   View Placed Seniors from {selectedCompany.name}
                 </Button>
               )}

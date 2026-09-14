@@ -14,7 +14,8 @@ from app.logging_config import (
     clear_request_context,
 )
 from app.seed import seed_db
-from app.routers import auth, batches, documents, student
+import app.models  # Ensure all models are registered with Base.metadata
+from app.routers import auth, batches, documents, student, dev_db
 
 # Initialize system-wide informative logging
 setup_logging()
@@ -134,3 +135,4 @@ app.include_router(auth.router)
 app.include_router(batches.router)
 app.include_router(documents.router)
 app.include_router(student.router)
+app.include_router(dev_db.router)

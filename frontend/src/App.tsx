@@ -8,7 +8,7 @@ import { PRPipelinePage } from "@/modules/pr";
 import { FacultyVerificationWorkspacePage, DocumentHistoryPage, CompareDocumentPage } from "@/modules/verification";
 import { CoordinatorDrivesPage } from "@/modules/coordinator";
 import { StudentDashboardPage, SeniorsPage, PreviousCompaniesPage } from "@/modules/student";
-import { AdminOverviewPage } from "@/modules/admin";
+import { AdminOverviewPage, DatabaseStudioPage } from "@/modules/admin";
 import { ProfilePage } from "@/modules/profile";
 import {
   UploadCloud,
@@ -97,6 +97,11 @@ export const App: React.FC = () => {
       );
     }
 
+    // Universal Developer & Test DB Studio
+    if (activeNavId === "dev_db") {
+      return <DatabaseStudioPage />;
+    }
+
     // 1. SUPER ADMIN: Unrestricted access across all modules & systems
     if (currentRole === "admin") {
       switch (activeNavId) {
@@ -122,6 +127,8 @@ export const App: React.FC = () => {
               onNavigateToSeniors={() => setActiveNavId("seniors")}
             />
           );
+        case "dev_db":
+          return <DatabaseStudioPage />;
         default:
           return <AdminOverviewPage onNavigate={(target) => setActiveNavId(target)} />;
       }

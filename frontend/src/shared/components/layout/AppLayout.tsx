@@ -22,7 +22,8 @@ import {
   Check,
   ShieldAlert,
   LogOut,
-  User
+  User,
+  Database
 } from "lucide-react";
 import { ThemeToggle } from "@/shared/components/ui/theme-toggle";
 import { Input } from "@/shared/components/ui/input";
@@ -111,6 +112,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       { id: "student_dashboard", label: "Student View", icon: GraduationCap },
       { id: "seniors", label: "Senior Directory", icon: GraduationCap },
       { id: "companies", label: "Past Recruiters", icon: Building2 },
+      { id: "dev_db", label: "Database Studio", icon: Database, badge: "TEST" },
     ],
   };
 
@@ -291,6 +293,22 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             >
               <User className="w-4 h-4 text-slate-400 dark:text-slate-500" />
               <span>My Profile</span>
+            </button>
+            <button
+              onClick={() => onNavSelect("dev_db")}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
+                activeNavId === "dev_db"
+                  ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-semibold border border-indigo-200 dark:border-indigo-800"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Database className="w-4 h-4 text-indigo-500" />
+                <span>Test DB Studio</span>
+              </div>
+              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-300 font-bold">
+                DEV
+              </span>
             </button>
             <button
               onClick={() => onNavSelect("settings")}

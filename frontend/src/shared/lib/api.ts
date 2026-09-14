@@ -425,6 +425,181 @@ class ApiClient {
 
     return res.json();
   }
+
+  // --- Dev / Test DB Studio Operations ---
+  public async getDbTables(): Promise<{ tables: TableInfo[]; dialect: string }> {
+    const res = await fetch(`${API_BASE_URL}/dev/db/tables`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) {
+      throw new Error("Failed to inspect database tables");
+    }
+    return res.json();
+  }
+
+  public async getDbTableRows(
+    table: string,
+    params?: {
+      limit?: number;
+      offset?: number;
+      sort_by?: string;
+      sort_dir?: "asc" | "desc";
+      search?: string;
+    }
+  ): Promise<TableRowsResponse> {
+    const query = new URLSearchParams();
+    if (params?.limit) query.set("limit", String(params.limit));
+    if (params?.offset !== undefined) query.set("offset", String(params.offset));
+    if (params?.sort_by) query.set("sort_by", params.sort_by);
+    if (params?.sort_dir) query.set("sort_dir", params.sort_dir);
+    if (params?.search) query.set("search", params.search);
+
+    const qs = query.toString() ? `?${query.toString()}` : "";
+    const res = await fetch(`${API_BASE_URL}/dev/db/tables/${encodeURIComponent(table)}/rows${qs}`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Failed to fetch rows" }));
+      throw new Error(err.detail || "Failed to fetch rows");
+    }
+    return res.json();
+  }
+
+  public async insertDbTableRow(
+    table: string,
+    data: Record<string, any> | Record<string, any>[],
+    autoHashPasswords = true
+  ): Promise<{ status: string; table: string; inserted_count: number; results: any[] }> {
+    const body = Array.isArray(data)
+      ? { rows: data, auto_hash_passwords: autoHashPasswords }
+      : { data, auto_hash_passwords: autoHashPasswords };
+
+    const res = await fetch(`${API_BASE_URL}/dev/db/tables/${encodeURIComponent(table)}/rows`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Insert failed" }));
+      throw new Error(typeof err.detail === "string" ? err.detail : JSON.stringify(err.detail));
+    }
+    return res.json();
+  }
+
+  public async updateDbTableRow(
+    table: string,
+    primaryKey: Record<string, any>,
+    data: Record<string, any>
+  ): Promise<{ status: string; table: string; rows_updated: number }> {
+    const res = await fetch(`${API_BASE_URL}/dev/db/tables/${encodeURIComponent(table)}/rows`, {
+      method: "PUT",
+      headers: this.getHeaders(),
+      body: JSON.stringify({ primary_key: primaryKey, data }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Update failed" }));
+      throw new Error(err.detail || "Update failed");
+    }
+    return res.json();
+  }
+
+  public async deleteDbTableRow(
+    table: string,
+    primaryKey: Record<string, any>
+  ): Promise<{ status: string; rows_deleted: number }> {
+    const res = await fetch(`${API_BASE_URL}/dev/db/tables/${encodeURIComponent(table)}/delete-row`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({ primary_key: primaryKey }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Delete failed" }));
+      throw new Error(err.detail || "Delete failed");
+    }
+    return res.json();
+  }
+
+  public async truncateDbTable(table: string): Promise<{ status: string; message: string }> {
+    const res = await fetch(`${API_BASE_URL}/dev/db/tables/${encodeURIComponent(table)}/truncate`, {
+      method: "POST",
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Truncate failed" }));
+      throw new Error(err.detail || "Truncate failed");
+    }
+    return res.json();
+  }
+
+  public async runCustomSql(
+    query: string,
+    params?: Record<string, any>
+  ): Promise<CustomQueryResponse> {
+    const res = await fetch(`${API_BASE_URL}/dev/db/query`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({ query, params }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Query execution failed" }));
+      const msg = typeof err.detail === "object" ? err.detail.error || JSON.stringify(err.detail) : err.detail;
+      throw new Error(msg || "Query execution failed");
+    }
+    return res.json();
+  }
+
+  public async seedDbPreset(preset: string): Promise<{ status: string; message: string }> {
+    const res = await fetch(`${API_BASE_URL}/dev/db/seed-preset`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify({ preset }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Seed failed" }));
+      throw new Error(err.detail || "Seed failed");
+    }
+    return res.json();
+  }
+}
+
+export interface TableColumnMeta {
+  name: string;
+  type: string;
+  nullable: boolean;
+  default?: string | null;
+  primary_key: boolean;
+}
+
+export interface TableInfo {
+  name: string;
+  row_count: number;
+  primary_keys: string[];
+  column_count: number;
+  columns: TableColumnMeta[];
+  error?: string;
+}
+
+export interface TableRowsResponse {
+  table: string;
+  columns: string[];
+  total_count: number;
+  limit: number;
+  offset: number;
+  rows: Record<string, any>[];
+}
+
+export interface CustomQueryResponse {
+  status: string;
+  type: "select" | "dml_ddl";
+  columns?: string[];
+  rows?: any[][];
+  row_count?: number;
+  rows_affected?: number;
+  execution_time_ms: number;
+  message?: string;
 }
 
 export const api = new ApiClient();
+

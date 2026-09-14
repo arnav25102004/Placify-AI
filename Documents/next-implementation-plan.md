@@ -1,6 +1,6 @@
 # Next Implementation Plan — Real Multi-Agent Pipeline, MCP Tools, Guardrails, Evals
 
-> **Status: PARKED.** Not started. Do not begin implementing this until the user explicitly says to proceed — they are doing a full manual frontend review/correction pass first. This file exists so the plan isn't lost between sessions, not as a green light to build.
+> **Status: IMPLEMENTED** (all 5 backend phases + Phase 5's frontend stat cards). Verified end-to-end against the live Docker/Postgres stack: real local OCR reads uploaded files, the fraud/cross-verification/discrepancy agents run for real, the fast/deep-path branch and MCP tools work, and `/admin/eval-metrics` returns real data. No NVIDIA/Groq/Gemini API key is configured anywhere yet, so extraction still falls back to the deterministic mock in practice — add a real key to actually stop mocking field values. One piece is explicitly not done: `CompareDocumentPage.tsx` was already a fully static mock page with no document wiring at all before this round, and wiring real per-field confidence into it would mean making that whole page real first — scoped out as a separate follow-up rather than rushed here.
 
 ## Context
 

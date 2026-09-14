@@ -39,7 +39,9 @@ import {
   Bot,
   FileCheck2,
   Sliders,
+  Building2,
 } from "lucide-react";
+import { api } from "@/shared/lib/api";
 
 // Curated brand logos for student companies
 const COMPANY_LOGOS: Record<string, string> = {
@@ -89,6 +91,67 @@ const CompanyMiniLogo: React.FC<{ companyName: string }> = ({ companyName }) => 
   return <Briefcase className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />;
 };
 
+const StudentAvatar: React.FC<{
+  name: string;
+  photoUrl?: string | null;
+  status: string;
+  size?: "md" | "lg";
+}> = ({ name, photoUrl, status, size = "md" }) => {
+  const [imgError, setImgError] = useState(false);
+  const initials = name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase();
+
+  const isVerified = status === "Verified_Placed";
+  const sizeClasses = size === "lg" ? "w-14 h-14" : "w-12 h-12";
+
+  if (photoUrl && !imgError) {
+    return (
+      <div className="relative shrink-0">
+        <img
+          src={photoUrl}
+          alt={name}
+          onError={() => setImgError(true)}
+          className={`${sizeClasses} rounded-2xl object-cover border border-slate-200 dark:border-slate-800 shadow-sm`}
+          loading="lazy"
+        />
+        {isVerified && (
+          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-xs">
+            <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative shrink-0">
+      <div
+        className={`${sizeClasses} rounded-2xl flex items-center justify-center font-bold text-sm text-white shadow-sm ${
+          isVerified
+            ? "bg-gradient-to-tr from-emerald-600 to-teal-600"
+            : status === "Letter_Uploaded"
+            ? "bg-gradient-to-tr from-blue-600 to-indigo-600"
+            : status === "Offer_Reported"
+            ? "bg-gradient-to-tr from-amber-600 to-orange-600"
+            : "bg-gradient-to-tr from-slate-700 to-slate-900"
+        }`}
+      >
+        {initials || "ST"}
+      </div>
+      {isVerified && (
+        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-xs">
+          <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const PRPipelinePage: React.FC = () => {
   // Current PR's program & dynamic cohort capacity configured by Super Admin
   const currentDepartment = "CSE";
@@ -125,6 +188,7 @@ export const PRPipelinePage: React.FC = () => {
       assignedFaculty: "Dr. Anita Desai (HOD)",
       hasOfferLetter: true,
       offerFileName: "Google_India_Arnav_21CS042.pdf",
+      photoUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&auto=format&fit=crop&q=80",
     },
     {
       id: "s-02",
@@ -144,6 +208,7 @@ export const PRPipelinePage: React.FC = () => {
       assignedFaculty: "Prof. S. Ranganathan",
       hasOfferLetter: true,
       offerFileName: "Microsoft_Divya_21CS019.pdf",
+      photoUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80",
     },
     {
       id: "s-03",
@@ -158,6 +223,7 @@ export const PRPipelinePage: React.FC = () => {
       assignedPrName: "Rohit Patel",
       status: "Unplaced",
       hasOfferLetter: false,
+      photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
     },
     {
       id: "s-04",
@@ -176,6 +242,7 @@ export const PRPipelinePage: React.FC = () => {
       packageLPA: 24.0,
       assignedFaculty: "Dr. P. K. Sharma",
       hasOfferLetter: false,
+      photoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
     },
     {
       id: "s-05",
@@ -193,6 +260,7 @@ export const PRPipelinePage: React.FC = () => {
       role: "Server Tech Eng.",
       packageLPA: 18.0,
       hasOfferLetter: false,
+      photoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
     },
     {
       id: "s-06",
@@ -212,6 +280,7 @@ export const PRPipelinePage: React.FC = () => {
       assignedFaculty: "Dr. Anita Desai (HOD)",
       hasOfferLetter: true,
       offerFileName: "Cisco_Sneha_21CS034.pdf",
+      photoUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80",
     },
     {
       id: "s-07",
@@ -226,6 +295,7 @@ export const PRPipelinePage: React.FC = () => {
       assignedPrName: "Rohit Patel",
       status: "Unplaced",
       hasOfferLetter: false,
+      photoUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80",
     },
     {
       id: "s-08",
@@ -240,6 +310,7 @@ export const PRPipelinePage: React.FC = () => {
       assignedPrName: "Rohit Patel",
       status: "Unplaced",
       hasOfferLetter: false,
+      photoUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80",
     },
     {
       id: "s-09",
@@ -259,6 +330,7 @@ export const PRPipelinePage: React.FC = () => {
       assignedFaculty: "Prof. S. Ranganathan",
       hasOfferLetter: true,
       offerFileName: "Amazon_Kavya_21CS054.pdf",
+      photoUrl: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&auto=format&fit=crop&q=80",
     },
     {
       id: "s-10",
@@ -273,6 +345,7 @@ export const PRPipelinePage: React.FC = () => {
       assignedPrName: "Rohit Patel",
       status: "Unplaced",
       hasOfferLetter: false,
+      photoUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80",
     },
     {
       id: "s-11",
@@ -290,6 +363,7 @@ export const PRPipelinePage: React.FC = () => {
       role: "Tech Analyst",
       packageLPA: 22.0,
       hasOfferLetter: false,
+      photoUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80",
     },
     {
       id: "s-12",
@@ -304,6 +378,7 @@ export const PRPipelinePage: React.FC = () => {
       assignedPrName: "Rohit Patel",
       status: "Unplaced",
       hasOfferLetter: false,
+      photoUrl: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200&auto=format&fit=crop&q=80",
     },
     {
       id: "s-13",
@@ -323,6 +398,7 @@ export const PRPipelinePage: React.FC = () => {
       assignedFaculty: "Dr. P. K. Sharma",
       hasOfferLetter: true,
       offerFileName: "Adobe_Pooja_21CS049.pdf",
+      photoUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&auto=format&fit=crop&q=80",
     },
     {
       id: "s-14",
@@ -337,6 +413,7 @@ export const PRPipelinePage: React.FC = () => {
       assignedPrName: "Rohit Patel",
       status: "Unplaced",
       hasOfferLetter: false,
+      photoUrl: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=80",
     },
     {
       id: "s-15",
@@ -356,8 +433,39 @@ export const PRPipelinePage: React.FC = () => {
       assignedFaculty: "Dr. Anita Desai (HOD)",
       hasOfferLetter: true,
       offerFileName: "Atlassian_Rhea_21CS093.pdf",
+      photoUrl: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=200&auto=format&fit=crop&q=80",
     },
   ]);
+
+  // Connect & Sync with Backend PR Endpoint
+  useEffect(() => {
+    let isMounted = true;
+    const loadCohortStudents = async () => {
+      try {
+        const liveStudents = await api.getManagedStudents({ department: currentDepartment });
+        if (isMounted && liveStudents && liveStudents.length > 0) {
+          setStudents(
+            liveStudents.map((s) => ({
+              ...s,
+              status: s.status as IManagedStudent["status"],
+              company: s.company || undefined,
+              role: s.role || undefined,
+              packageLPA: s.packageLPA || undefined,
+              assignedFaculty: s.assignedFaculty || undefined,
+              offerFileName: s.offerFileName || undefined,
+              photoUrl: s.photoUrl || undefined,
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn("Could not fetch live students from backend PR endpoint, using fallback roster:", err);
+      }
+    };
+    loadCohortStudents();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentDepartment]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -404,20 +512,38 @@ export const PRPipelinePage: React.FC = () => {
     setIsStudentDialogOpen(true);
   };
 
-  const handleConfirmUpload = () => {
+  const handleConfirmUpload = async () => {
     if (!selectedStudent) return;
+    const pkg = parseFloat(offerPackage) || 0;
+    const updatedFields = {
+      company: offerCompany,
+      role: offerRole,
+      packageLPA: pkg,
+      assignedFaculty: inchargeFaculty,
+      offerFileName: stagedDocName,
+      status: "Letter_Uploaded" as const,
+      hasOfferLetter: true,
+    };
+
+    try {
+      await api.updateStudentOffer(selectedStudent.id, {
+        company: offerCompany,
+        role: offerRole,
+        packageLPA: pkg,
+        assignedFaculty: inchargeFaculty,
+        offerFileName: stagedDocName,
+        status: "Letter_Uploaded",
+      });
+    } catch (err) {
+      console.warn("Backend student offer update fallback to local state:", err);
+    }
+
     setStudents((prev) =>
       prev.map((s) =>
         s.id === selectedStudent.id
           ? {
               ...s,
-              status: "Letter_Uploaded",
-              company: offerCompany,
-              role: offerRole,
-              packageLPA: parseFloat(offerPackage),
-              assignedFaculty: inchargeFaculty,
-              hasOfferLetter: true,
-              offerFileName: stagedDocName,
+              ...updatedFields,
             }
           : s
       )
@@ -429,8 +555,10 @@ export const PRPipelinePage: React.FC = () => {
     setTimeout(() => setSuccessToast(null), 6000);
   };
 
-  const handleAddStudent = () => {
+  const handleAddStudent = async () => {
     if (!newStudentName || !newStudentRoll) return;
+    const defaultPhoto =
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80";
     const newStudent: IManagedStudent = {
       id: `s-${students.length + 1}`,
       name: newStudentName,
@@ -444,11 +572,36 @@ export const PRPipelinePage: React.FC = () => {
       assignedPrName: "Rohit Patel",
       status: "Unplaced",
       hasOfferLetter: false,
+      photoUrl: defaultPhoto,
     };
+
+    try {
+      const created = await api.createManagedStudent({
+        name: newStudent.name,
+        rollNo: newStudent.rollNo,
+        email: newStudent.email,
+        phone: newStudent.phone,
+        cgpa: newStudent.cgpa,
+        department: newStudent.department,
+        batchTimeline: newStudent.batchTimeline,
+        assignedPrId: newStudent.assignedPrId,
+        assignedPrName: newStudent.assignedPrName,
+        photoUrl: defaultPhoto,
+      });
+      if (created && created.id) {
+        newStudent.id = created.id;
+      }
+    } catch (err) {
+      console.warn("Backend student creation fallback to local state:", err);
+    }
+
     setStudents([...students, newStudent]);
     setIsAddStudentDialogOpen(false);
     setNewStudentName("");
     setNewStudentRoll("");
+    setNewStudentEmail("");
+    setNewStudentPhone("");
+    setNewStudentCgpa("8.50");
     setSuccessToast(
       `Added ${newStudent.name} (${newStudent.rollNo}) to your ${currentDepartment} cohort roster.`
     );
@@ -757,9 +910,9 @@ export const PRPipelinePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Cohort View: Upgraded Cards Grid or Ledger Table */}
+      {/* Main Cohort View: Upgraded 3-Column Cards Grid or Ledger Table */}
       {viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredStudents.map((s, index) => {
             const isVerified = s.status === "Verified_Placed";
             const isUploaded = s.status === "Letter_Uploaded";
@@ -769,109 +922,106 @@ export const PRPipelinePage: React.FC = () => {
               <div
                 key={s.id}
                 onClick={() => handleOpenStudentDialog(s)}
-                className={`group relative rounded-2xl cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-xl border bg-white dark:bg-slate-900/95 flex flex-col justify-between p-4.5 ${
+                className={`group relative rounded-2xl cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md border bg-white dark:bg-slate-900 p-6 flex flex-col justify-between space-y-4 ${
                   isVerified
                     ? "border-emerald-200/90 dark:border-emerald-800/80 hover:border-emerald-500 shadow-xs"
                     : isUploaded
                     ? "border-blue-200/90 dark:border-blue-800/80 hover:border-blue-500 shadow-xs"
                     : isReported
                     ? "border-amber-200/90 dark:border-amber-800/80 hover:border-amber-500 shadow-xs"
-                    : "border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 shadow-xs"
+                    : "border-slate-200 dark:border-slate-800 hover:border-blue-500/50 dark:hover:border-blue-500/50 shadow-xs"
                 }`}
               >
-                {/* Top Row: Avatar, Student Name, Roll No & Seat Indicator */}
-                <div>
-                  <div className="flex items-start justify-between gap-2.5">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative">
-                        <Avatar className="w-11 h-11 border-2 border-white dark:border-slate-800 shadow-sm shrink-0">
-                          <AvatarFallback
-                            className={`font-bold text-xs text-white ${
-                              isVerified
-                                ? "bg-gradient-to-br from-emerald-600 to-teal-700"
-                                : isUploaded
-                                ? "bg-gradient-to-br from-blue-600 to-indigo-700"
-                                : isReported
-                                ? "bg-gradient-to-br from-amber-600 to-orange-700"
-                                : "bg-gradient-to-br from-slate-700 to-slate-800"
-                            }`}
-                          >
-                            {s.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        {isVerified && (
-                          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center">
-                            <CheckCircle2 className="w-2.5 h-2.5 text-white" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-bold text-slate-900 dark:text-white text-sm truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                <div className="space-y-4">
+                  {/* Top Profile Header: Photo / Monogram, Name, Roll No & Status */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <StudentAvatar name={s.name} photoUrl={s.photoUrl} status={s.status} />
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-snug truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                           {s.name}
                         </h3>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="font-mono text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                          <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
                             {s.rollNo}
                           </span>
-                        </div>
+                          <span>•</span>
+                          <span>{s.department}</span>
+                          <span>•</span>
+                          <span className="font-medium text-slate-600 dark:text-slate-300">
+                            CGPA {s.cgpa}
+                          </span>
+                        </p>
                       </div>
                     </div>
 
-                    <span className="font-mono text-[10px] font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-full shrink-0">
-                      #{String(index + 1).padStart(2, "0")}
-                    </span>
+                    <div className="shrink-0">{getStatusBadge(s.status)}</div>
                   </div>
 
-                  {/* Academic Metrics Row */}
-                  <div className="flex items-center justify-between mt-3 text-[11px] text-slate-500 dark:text-slate-400 pb-2 border-b border-slate-100 dark:border-slate-800/80">
-                    <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
-                      <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
-                      CGPA {s.cgpa}
-                    </span>
-                    <span className="text-[10px] font-medium text-slate-400">
-                      {s.department} • {s.batchTimeline.split("-")[1]}
-                    </span>
-                  </div>
-
-                  {/* Placement Details Card */}
-                  <div className="mt-3 min-h-[58px] rounded-xl p-2.5 transition-all flex flex-col justify-center bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/70">
+                  {/* Company & Placement Offer Details Box */}
+                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/80 space-y-2">
                     {s.company ? (
-                      <div>
-                        <div className="flex items-center justify-between gap-1">
-                          <div className="flex items-center gap-1.5 min-w-0">
+                      <>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-extrabold text-blue-600 dark:text-blue-400 flex items-center gap-1.5 min-w-0 truncate">
                             <CompanyMiniLogo companyName={s.company} />
-                            <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                              {s.company}
-                            </span>
-                          </div>
-                          <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 shrink-0">
+                            <span className="truncate">{s.company}</span>
+                          </span>
+                          <span className="text-xs font-bold text-slate-900 dark:text-white shrink-0">
                             ₹{s.packageLPA} LPA
                           </span>
                         </div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
-                          {s.role}
+                        <div className="text-[11px] text-slate-600 dark:text-slate-300 flex items-center justify-between gap-2">
+                          <span className="truncate">{s.role}</span>
+                          <span className="text-[10px] font-medium text-slate-400 shrink-0">
+                            {s.hasOfferLetter ? "Offer Ingested" : "Reported"}
+                          </span>
                         </div>
-                      </div>
+                      </>
                     ) : (
-                      <div className="text-xs text-slate-400 dark:text-slate-500 italic flex items-center justify-center gap-1.5 py-1">
-                        <Clock className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
-                        <span>Awaiting Placement Drive</span>
+                      <div className="text-xs text-slate-400 dark:text-slate-500 italic flex items-center justify-center gap-2 py-2">
+                        <Clock className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Awaiting Campus Placement Drive</span>
                       </div>
                     )}
                   </div>
+
+                  {/* Faculty Reviewer & Seat Meta */}
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-0.5">
+                    <span className="truncate">
+                      {s.assignedFaculty ? (
+                        <span className="flex items-center gap-1">
+                          <span className="text-slate-400">Advisor:</span>
+                          <strong className="text-slate-700 dark:text-slate-300 font-medium truncate">
+                            {s.assignedFaculty}
+                          </strong>
+                        </span>
+                      ) : (
+                        <span className="italic text-slate-400">Faculty unassigned</span>
+                      )}
+                    </span>
+                    <span className="font-mono text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800/60 px-2 py-0.5 rounded-full shrink-0">
+                      #{String(index + 1).padStart(2, "0")}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Footer with Status Badge and Click-to-Manage Hint */}
-                <div className="mt-3.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                  <div className="shrink-0">{getStatusBadge(s.status)}</div>
-
-                  <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 inline-flex items-center gap-0.5 opacity-80 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">
-                    Manage <ChevronRight className="w-3.5 h-3.5" />
+                {/* Card Action Footer */}
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {s.hasOfferLetter ? "Verified PDF available" : "Action: Ingest offer"}
                   </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenStudentDialog(s);
+                    }}
+                    className="h-7 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg cursor-pointer px-2.5 gap-1"
+                  >
+                    View Details <ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
               </div>
             );
@@ -907,10 +1057,17 @@ export const PRPipelinePage: React.FC = () => {
                     <td className="px-5 py-3.5 font-mono font-bold text-slate-900 dark:text-slate-100">
                       {s.rollNo}
                     </td>
-                    <td className="px-5 py-3.5 font-semibold text-slate-900 dark:text-slate-100">
-                      <div>{s.name}</div>
-                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                        {s.email}
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <StudentAvatar name={s.name} photoUrl={s.photoUrl} status={s.status} />
+                        <div>
+                          <div className="font-semibold text-slate-900 dark:text-slate-100">
+                            {s.name}
+                          </div>
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                            {s.email}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-5 py-3.5 font-bold text-slate-800 dark:text-slate-200">
@@ -976,14 +1133,12 @@ export const PRPipelinePage: React.FC = () => {
               <DialogHeader className="text-left space-y-2 border-b border-slate-100 dark:border-slate-800 pb-4">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-3">
-                    <Avatar className="w-12 h-12 border-2 border-slate-200 dark:border-slate-700 shadow-xs">
-                      <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-bold text-sm">
-                        {selectedStudent.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
+                    <StudentAvatar
+                      name={selectedStudent.name}
+                      photoUrl={selectedStudent.photoUrl}
+                      status={selectedStudent.status}
+                      size="lg"
+                    />
                     <div>
                       <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">
                         {selectedStudent.name}

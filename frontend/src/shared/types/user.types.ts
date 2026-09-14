@@ -29,4 +29,5 @@ export interface IManagedStudent {
   assignedFaculty?: string;
   hasOfferLetter: boolean;
   offerFileName?: string;
+  photoUrl?: string;
 }

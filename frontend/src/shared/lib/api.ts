@@ -128,6 +128,58 @@ export interface VerifyActionPayload {
   offer_type?: string;
 }
 
+export interface ManagedStudent {
+  id: string;
+  name: string;
+  rollNo: string;
+  email: string;
+  phone: string;
+  cgpa: string;
+  department: string;
+  batchTimeline: string;
+  assignedPrId: string;
+  assignedPrName: string;
+  status: string;
+  company?: string | null;
+  role?: string | null;
+  packageLPA?: number | null;
+  assignedFaculty?: string | null;
+  hasOfferLetter: boolean;
+  offerFileName?: string | null;
+  photoUrl?: string | null;
+}
+
+export interface CreateManagedStudentPayload {
+  name: string;
+  rollNo: string;
+  email?: string;
+  phone?: string;
+  cgpa?: string;
+  department?: string;
+  batchTimeline?: string;
+  assignedPrId?: string;
+  assignedPrName?: string;
+  photoUrl?: string;
+}
+
+export interface UpdateStudentOfferPayload {
+  company: string;
+  role: string;
+  packageLPA: number;
+  assignedFaculty: string;
+  offerFileName?: string;
+  status?: string;
+}
+
+import type { ProgramCohortAllocation } from "./pr-cohort-config";
+
+export interface UpdateProgramAllocationPayload {
+  studentsPerPR: number;
+  totalStudents?: number;
+  programName?: string;
+  notes?: string;
+}
+
 class ApiClient {
   private token: string | null = localStorage.getItem("placify_token");
 
@@ -559,6 +611,82 @@ class ApiClient {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: "Seed failed" }));
       throw new Error(err.detail || "Seed failed");
+    }
+    return res.json();
+  }
+
+  // --- PR Cohort Management Endpoints ---
+
+  public async getManagedStudents(params?: {
+    search?: string;
+    status?: string;
+    department?: string;
+  }): Promise<ManagedStudent[]> {
+    const searchParams = new URLSearchParams();
+    if (params?.search) searchParams.append("search", params.search);
+    if (params?.status && params.status !== "ALL") searchParams.append("status", params.status);
+    if (params?.department && params.department !== "ALL") searchParams.append("department", params.department);
+
+    const queryStr = searchParams.toString() ? `?${searchParams.toString()}` : "";
+    const res = await fetch(`${API_BASE_URL}/pr/students${queryStr}`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Failed to fetch managed students" }));
+      throw new Error(err.detail || "Failed to fetch managed students");
+    }
+    return res.json();
+  }
+
+  public async createManagedStudent(payload: CreateManagedStudentPayload): Promise<ManagedStudent> {
+    const res = await fetch(`${API_BASE_URL}/pr/students`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Failed to create student record" }));
+      throw new Error(err.detail || "Failed to create student record");
+    }
+    return res.json();
+  }
+
+  public async updateStudentOffer(studentId: string, payload: UpdateStudentOfferPayload): Promise<ManagedStudent> {
+    const res = await fetch(`${API_BASE_URL}/pr/students/${studentId}`, {
+      method: "PUT",
+      headers: this.getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Failed to update placement offer" }));
+      throw new Error(err.detail || "Failed to update placement offer");
+    }
+    return res.json();
+  }
+
+  public async getProgramCohortAllocations(): Promise<ProgramCohortAllocation[]> {
+    const res = await fetch(`${API_BASE_URL}/pr/cohort-allocations`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Failed to fetch cohort allocations" }));
+      throw new Error(err.detail || "Failed to fetch cohort allocations");
+    }
+    return res.json();
+  }
+
+  public async updateProgramCohortAllocation(
+    allocationId: string,
+    payload: UpdateProgramAllocationPayload
+  ): Promise<ProgramCohortAllocation> {
+    const res = await fetch(`${API_BASE_URL}/pr/cohort-allocations/${allocationId}`, {
+      method: "PUT",
+      headers: this.getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Failed to update cohort allocation" }));
+      throw new Error(err.detail || "Failed to update cohort allocation");
     }
     return res.json();
   }

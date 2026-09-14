@@ -39,6 +39,7 @@ import {
   updateProgramCapacity,
   resetProgramAllocationsToDefault,
 } from "@/shared/lib/pr-cohort-config";
+import { api } from "@/shared/lib/api";
 
 interface AdminOverviewPageProps {
   onNavigate: (viewId: string) => void;
@@ -52,6 +53,26 @@ export const AdminOverviewPage: React.FC<AdminOverviewPageProps> = ({ onNavigate
   const [allocations, setAllocations] = useState<ProgramCohortAllocation[]>(() =>
     getProgramAllocations()
   );
+
+  // Sync with live backend cohort allocation policies
+  useEffect(() => {
+    let isMounted = true;
+    const fetchAllocations = async () => {
+      try {
+        const live = await api.getProgramCohortAllocations();
+        if (isMounted && live && live.length > 0) {
+          setAllocations(live as ProgramCohortAllocation[]);
+          saveProgramAllocations(live as ProgramCohortAllocation[]);
+        }
+      } catch (err) {
+        console.warn("Backend cohort allocations fallback to local storage:", err);
+      }
+    };
+    fetchAllocations();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
   const [editingAllocation, setEditingAllocation] = useState<ProgramCohortAllocation | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -125,6 +146,17 @@ export const AdminOverviewPage: React.FC<AdminOverviewPageProps> = ({ onNavigate
       `Updated ${editingAllocation.departmentCode} allocation: 1 PR per ${studentsPerPR} students (${needed} PRs needed). Dynamic cohort capacity propagated.`
     );
     setTimeout(() => setPolicyToast(null), 5000);
+
+    try {
+      api.updateProgramCohortAllocation(editingAllocation.id, {
+        studentsPerPR,
+        totalStudents,
+        programName: formProgramName,
+        notes: formNotes,
+      }).catch((e) => console.warn("Backend allocation update note:", e));
+    } catch (err) {
+      console.warn("Backend allocation update fallback:", err);
+    }
   };
 
   const handleCreateProgramPolicy = () => {
@@ -168,6 +200,14 @@ export const AdminOverviewPage: React.FC<AdminOverviewPageProps> = ({ onNavigate
       `Adjusted ${item.departmentCode} PR capacity to ${newCap} students per PR.`
     );
     setTimeout(() => setPolicyToast(null), 4000);
+
+    try {
+      api.updateProgramCohortAllocation(id, {
+        studentsPerPR: newCap,
+      }).catch((e) => console.warn("Backend inline allocation update note:", e));
+    } catch (err) {
+      console.warn("Backend allocation update fallback:", err);
+    }
   };
 
   const handleResetBaselines = () => {

@@ -221,9 +221,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   {currentProfile.roleLabel}
                 </span>
               </div>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold uppercase">
-                {currentRole === "admin" ? "All Access" : "Scoped"}
-              </span>
             </div>
           </div>
 

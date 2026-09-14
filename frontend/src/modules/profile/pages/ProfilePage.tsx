@@ -24,6 +24,21 @@ import {
   Check,
   Plus,
   Trash2,
+  FileText,
+  ExternalLink,
+  Code2,
+  Award,
+  GraduationCap,
+  Briefcase,
+  ShieldCheck,
+  Download,
+  X,
+  Star,
+  Users,
+  Terminal,
+  FolderGit2,
+  Cpu,
+  Clock,
 } from "lucide-react";
 
 interface ProfilePageProps {
@@ -50,34 +65,99 @@ const AVATAR_PRESETS = [
   },
 ];
 
+interface CapstoneProject {
+  id: string;
+  title: string;
+  description: string;
+  technologies: string[];
+  githubUrl: string;
+  demoUrl: string;
+  isVerified: boolean;
+  verifiedBy: string;
+}
+
 export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated }) => {
   const [isEditing, setIsEditing] = useState<boolean>(true);
+  const isStudent = user?.role === "student";
+
   const [formData, setFormData] = useState<UpdateProfilePayload>({
-    full_name: user?.full_name || (user?.role === "student" ? "Arnav Sharma" : "Dr. Emily Chen, MD"),
-    phone: user?.phone || "(212) 555-7890",
-    department: user?.department || (user?.role === "student" ? "COMPUTER SCIENCE & ENGINEERING" : "INTERNAL MEDICINE, CARDIOLOGY"),
-    designation: user?.designation || (user?.role === "student" ? "Final Year B.Tech Placement Candidate" : "Associate Professor & Senior Verification Reviewer"),
-    bio: user?.bio || (user?.role === "student"
-      ? "Arnav Sharma is praised for strong algorithmic problem-solving, distributed systems mastery, and clear technical communication. Consistently ranks top 5% in placement cohorts with an active PPO offer."
+    full_name: user?.full_name || (isStudent ? "Arnav Sharma" : "Dr. Emily Chen, MD"),
+    phone: user?.phone || (isStudent ? "+91 98765-43210" : "(212) 555-7890"),
+    department: user?.department || (isStudent ? "COMPUTER SCIENCE & ENGINEERING" : "INTERNAL MEDICINE, CARDIOLOGY"),
+    designation: user?.designation || (isStudent ? "Final Year B.Tech • Super Dream Candidate" : "Associate Professor & Senior Verification Reviewer"),
+    bio: user?.bio || (isStudent
+      ? "Arnav Sharma is praised for high-throughput distributed systems, algorithmic precision, and clean full-stack architecture. Consistently ranks in the top 3% of the campus batch with an active Super Dream PPO offer."
       : "Dr. Emily Chen is praised for professionalism, empathy, and clear explanations. Patients and coordinators value her cardiology expertise and easy booking. Some note rare communication delays."),
-    avatar_url: user?.avatar_url || "https://images.unsplash.com/photo-1594824813593-c90a1f0a8241?auto=format&fit=crop&q=80&w=1000",
-    linkedin_url: user?.linkedin_url || "https://linkedin.com/in/emily-chen-cardiology",
-    github_url: user?.github_url || "https://github.com/placify-lead",
+    avatar_url: user?.avatar_url || (isStudent
+      ? "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=1000"
+      : "https://images.unsplash.com/photo-1594824813593-c90a1f0a8241?auto=format&fit=crop&q=80&w=1000"),
+    linkedin_url: user?.linkedin_url || "https://linkedin.com/in/arnav-placify",
+    github_url: user?.github_url || "https://github.com/arnav-dev",
   });
 
-  const [location, setLocation] = useState<string>("New York, NY, Manhattan Health Associates");
+  // Academic & Placement Credentials
+  const [academicStats, setAcademicStats] = useState({
+    cgpa: "8.94",
+    backlogs: "0 Active",
+    placementTier: "Tier 1 Super Dream",
+    prVerified: true,
+    verifiedBy: "Dr. Mary Issac (Placement Cell)",
+    verifiedAt: "Sept 12, 2026",
+    ppoStatus: "Offer Extended (Amazon SDE-1)",
+    atsScore: 94,
+  });
+
+  // Technical Footprint
+  const [techStats, setTechStats] = useState({
+    leetcodeRating: "1,942 (Knight)",
+    leetcodeSolved: "485+",
+    githubCommits: "890+ this year",
+    primaryStack: ["TypeScript", "Go / Golang", "React", "PostgreSQL", "Docker", "FastAPI"],
+  });
+
+  // Projects State
+  const [projects, setProjects] = useState<CapstoneProject[]>([
+    {
+      id: "p1",
+      title: "Placify AI - Autonomous Verification Engine",
+      description: "Distributed OCR verification microservice utilizing vision LLMs and edge caching to automate institutional placement credential approvals.",
+      technologies: ["FastAPI", "React", "PostgreSQL", "OpenAI Vision"],
+      githubUrl: "https://github.com/placify-lead/placify-ai",
+      demoUrl: "https://placify.internal",
+      isVerified: true,
+      verifiedBy: "Verified by PR Cell",
+    },
+    {
+      id: "p2",
+      title: "ZeroDrop - Low-Latency Message Broker",
+      description: "Custom zero-copy UDP/TCP pub-sub broker built with Rust handling 100k msgs/sec with p99 latency < 2ms.",
+      technologies: ["Rust", "Tokio", "gRPC", "Docker"],
+      githubUrl: "https://github.com/arnav-dev/zerodrop",
+      demoUrl: "https://zerodrop.dev",
+      isVerified: true,
+      verifiedBy: "Verified by PR Cell",
+    },
+  ]);
+
+  const [location, setLocation] = useState<string>("Bangalore Campus, Christ University, Hosur Road");
   const [competencies, setCompetencies] = useState<string[]>([
-    "English (Native)",
-    "Spanish (Fluent)",
+    "Distributed Systems",
+    "Full-Stack Architecture",
+    "English (Professional Native)",
+    "German (A2 Intermediate)",
   ]);
   const [newCompetency, setNewCompetency] = useState("");
+
+  // Slide-over Drawers State
+  const [activeDrawer, setActiveDrawer] = useState<"resume" | "project" | "endorsements" | null>(null);
+  const [selectedProject, setSelectedProject] = useState<CapstoneProject | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
-  // Calendar / Scheduling State matching reference
+  // Calendar / Scheduling State
   const [selectedDay, setSelectedDay] = useState<number>(25);
   const [selectedTime, setSelectedTime] = useState<string>("11:00 AM");
   const [bookingSuccess, setBookingSuccess] = useState(false);
@@ -119,20 +199,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
   };
 
   const handleResetDefaults = () => {
-    if (confirm("Reset to default profile values?")) {
+    if (confirm("Reset profile values to recommended defaults?")) {
       setFormData({
-        full_name: user?.role === "student" ? "Arnav Sharma" : "Dr. Emily Chen, MD",
-        phone: "(212) 555-7890",
-        department: user?.role === "student" ? "COMPUTER SCIENCE & ENGINEERING" : "INTERNAL MEDICINE, CARDIOLOGY",
-        designation: user?.role === "student" ? "Final Year Placement Candidate" : "Associate Professor & Senior Verification Reviewer",
-        bio: user?.role === "student"
-          ? "Arnav Sharma is praised for strong algorithmic problem-solving, distributed systems mastery, and clear technical communication."
+        full_name: isStudent ? "Arnav Sharma" : "Dr. Emily Chen, MD",
+        phone: isStudent ? "+91 98765-43210" : "(212) 555-7890",
+        department: isStudent ? "COMPUTER SCIENCE & ENGINEERING" : "INTERNAL MEDICINE, CARDIOLOGY",
+        designation: isStudent ? "Final Year B.Tech • Super Dream Candidate" : "Associate Professor & Senior Verification Reviewer",
+        bio: isStudent
+          ? "Arnav Sharma is praised for high-throughput distributed systems, algorithmic precision, and clean full-stack architecture. Consistently ranks in the top 3% of the campus batch with an active Super Dream PPO offer."
           : "Dr. Emily Chen is praised for professionalism, empathy, and clear explanations. Patients and coordinators value her cardiology expertise and easy booking. Some note rare communication delays.",
-        avatar_url: "https://images.unsplash.com/photo-1594824813593-c90a1f0a8241?auto=format&fit=crop&q=80&w=1000",
-        linkedin_url: "https://linkedin.com/in/emily-chen-cardiology",
-        github_url: "https://github.com/placify-lead",
+        avatar_url: isStudent
+          ? "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=1000"
+          : "https://images.unsplash.com/photo-1594824813593-c90a1f0a8241?auto=format&fit=crop&q=80&w=1000",
+        linkedin_url: "https://linkedin.com/in/arnav-placify",
+        github_url: "https://github.com/arnav-dev",
       });
-      setLocation("New York, NY, Manhattan Health Associates");
+      setLocation("Bangalore Campus, Christ University, Hosur Road");
     }
   };
 
@@ -148,9 +230,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
   };
 
   const generateAiBio = () => {
-    const roleName = formData.designation || "Senior Specialist";
-    const deptName = formData.department || "Internal Medicine";
-    const generated = `${formData.full_name || "Specialist"} is celebrated for outstanding expertise in ${deptName}, delivering disciplined accuracy and rapid turnaround. Peers and reviewers value their clinical rigor and prompt feedback across complex audit pipelines.`;
+    const roleName = formData.designation || "Candidate";
+    const deptName = formData.department || "Computer Science";
+    const generated = `${formData.full_name || "Candidate"} is recognized for high-caliber problem solving in ${deptName}, showing verified engineering excellence and clean system architecture. Placement evaluators commend their consistent technical velocity and rapid turnaround.`;
     setFormData((prev) => ({ ...prev, bio: generated }));
   };
 
@@ -168,14 +250,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
   const afternoonSlots = ["12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM"];
 
   return (
-    <div className="max-w-[1380px] mx-auto py-2 sm:py-6 px-3 sm:px-6 space-y-6 text-slate-900 dark:text-slate-100 font-sans antialiased">
+    <div className="max-w-[1400px] mx-auto py-2 sm:py-6 px-3 sm:px-6 space-y-6 text-slate-900 dark:text-slate-100 font-sans antialiased">
       {/* Toast Alert */}
       {saveSuccess && (
         <div className="fixed top-5 right-5 z-50 p-4 rounded-2xl bg-[#D4F436] text-slate-950 font-bold shadow-2xl border border-[#b6f000] flex items-center gap-3 animate-in slide-in-from-top-4 text-xs">
           <CheckCircle2 className="w-5 h-5 text-slate-950" />
           <div>
-            <div className="font-extrabold text-sm">Profile Saved</div>
-            <div className="text-[11px] text-slate-800">Your profile changes were successfully updated.</div>
+            <div className="font-extrabold text-sm">Profile Saved Successfully</div>
+            <div className="text-[11px] text-slate-800">Your profile changes are synced and verified in the database.</div>
           </div>
         </div>
       )}
@@ -190,31 +272,46 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
         </div>
       )}
 
-      {/* Top Banner & Mode Toggle */}
+      {/* Top Header Controls Bar */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-maroon-50 dark:bg-maroon-950/60 text-maroon-900 dark:text-maroon-300 flex items-center justify-center font-bold">
-            <User className="w-5 h-5" />
+            <GraduationCap className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h2 className="font-bold text-slate-900 dark:text-white text-base leading-tight">
-                {formData.full_name || "Profile"}
+                {formData.full_name || "Profile Hub"}
               </h2>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-maroon-100 dark:bg-maroon-950 text-maroon-900 dark:text-maroon-200 font-bold">
-                {user?.role?.toUpperCase() || "FACULTY"}
+              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-maroon-100 dark:bg-maroon-950 text-maroon-900 dark:text-maroon-200 font-bold border border-maroon-200 dark:border-maroon-800">
+                {user?.role?.toUpperCase() || "STUDENT"}
+              </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 font-semibold flex items-center gap-1 border border-emerald-300 dark:border-emerald-800">
+                <ShieldCheck className="w-3 h-3" /> PR VERIFIED
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               {isEditing
-                ? "Direct In-Place Editing: Click and modify any text field, avatar, or competency below."
-                : "Public View Mode: Viewing the clean HealthRate design presentation."}
+                ? "Interactive Bento Edit Mode: Modify information in-place. Academic fields show faculty verified stamps."
+                : "Bento View Mode: Executive summary for placement reviews, recruiters, and faculty."}
             </p>
           </div>
         </div>
 
-        {/* Action Controls */}
+        {/* Action Controls & Fast Triggers */}
         <div className="flex items-center gap-2.5">
+          {/* Quick Drawer Triggers */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setActiveDrawer("resume")}
+            className="h-9 px-3 rounded-2xl text-xs font-semibold gap-1.5 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+          >
+            <FileText className="w-3.5 h-3.5 text-maroon-900 dark:text-maroon-300" />
+            <span>Resume Drawer</span>
+          </Button>
+
+          {/* Mode Switcher */}
           <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs">
             <button
               onClick={() => setIsEditing(false)}
@@ -240,6 +337,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
             </button>
           </div>
 
+          {/* Save Profile Changes */}
           <Button
             size="sm"
             onClick={() => handleSaveProfile()}
@@ -252,14 +350,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
         </div>
       </div>
 
-      {/* Main 3-Column Layout exactly mirroring HealthRate reference */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+      {/* =========================================================================
+          MAIN BENTO GRID (12-Column Responsive Layout)
+          ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* =========================================================================
-            COLUMN 1: BIG PROMINENT PORTRAIT PHOTO & CONTACT INFO (4 COLS)
+            BENTO QUADRANT 1: HERO IDENTITY & BIG PORTRAIT (4 Columns)
             ========================================================================= */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Big Portrait Container: Prominent ~560px height with warm background matching Emily Chen */}
-          <div className="relative w-full h-[480px] sm:h-[560px] rounded-[32px] overflow-hidden bg-[#ECE6DC] dark:bg-[#201d1c] shadow-md border border-stone-200/80 dark:border-stone-800 flex items-center justify-center group">
+          {/* Bento Card: Big Portrait Frame */}
+          <div className="relative w-full h-[470px] sm:h-[540px] rounded-[32px] overflow-hidden bg-[#ECE6DC] dark:bg-[#1e1b1a] shadow-md border border-stone-200/80 dark:border-stone-800 flex items-center justify-center group">
             <img
               src={formData.avatar_url || AVATAR_PRESETS[0].url}
               alt={formData.full_name}
@@ -269,13 +369,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
               }}
             />
 
+            {/* Quick Status Pill On Photo */}
+            <div className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-950/75 text-white backdrop-blur-md text-[11px] font-medium border border-white/10 shadow-lg">
+              <span className="w-2 h-2 rounded-full bg-[#D4F436] animate-pulse" />
+              <span>Placement Ready • Top 3%</span>
+            </div>
+
             {/* Editable Camera Overlay Button */}
             {isEditing && (
               <div className="absolute inset-0 bg-slate-950/30 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-end p-6">
                 <Button
                   size="sm"
                   onClick={() => setShowAvatarPicker(!showAvatarPicker)}
-                  className="bg-white/95 hover:bg-white text-slate-950 font-bold text-xs rounded-2xl shadow-xl gap-2 backdrop-blur-xs px-4 py-2"
+                  className="bg-white/95 hover:bg-white text-slate-950 font-bold text-xs rounded-2xl shadow-xl gap-2 backdrop-blur-xs px-4 py-2 cursor-pointer"
                 >
                   <Camera className="w-4 h-4 text-maroon-900" />
                   <span>Change Portrait Photo</span>
@@ -284,14 +390,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
             )}
           </div>
 
-          {/* Quick Avatar Picker Dialog */}
+          {/* Quick Avatar Preset Selector Dialog */}
           {showAvatarPicker && isEditing && (
             <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-3 animate-in fade-in">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-bold text-slate-900 dark:text-white">Choose Preset Avatar</div>
                 <button
                   onClick={() => setShowAvatarPicker(false)}
-                  className="text-xs text-slate-400 hover:text-slate-600"
+                  className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
                   ✕
                 </button>
@@ -313,12 +419,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
               </div>
               <div className="space-y-1.5 pt-1">
                 <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                  Or Custom Photo URL
+                  Custom Image URL
                 </label>
                 <div className="flex gap-2">
                   <Input
                     type="text"
-                    placeholder="https://images.unsplash.com/..."
+                    placeholder="https://..."
                     value={formData.avatar_url}
                     onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
                     className="h-8 rounded-xl text-xs"
@@ -335,9 +441,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
             </div>
           )}
 
-          {/* Contact Details List matching HealthRate clean iconography */}
-          <div className="space-y-3 px-1 text-sm text-slate-700 dark:text-slate-300">
-            {/* Location */}
+          {/* Bento Card: Contact Details & Location */}
+          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-3.5 text-xs">
+            <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+              Direct Contact & Campus Location
+            </div>
+
             <div className="flex items-center gap-3">
               <MapPin className="w-4 h-4 text-slate-900 dark:text-slate-200 shrink-0 stroke-[2.2]" />
               {isEditing ? (
@@ -345,15 +454,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Location / Organization"
+                  placeholder="Campus Location"
                   className="w-full bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-maroon-900 focus:outline-hidden"
                 />
               ) : (
-                <span className="text-xs font-medium text-slate-800 dark:text-slate-200">{location}</span>
+                <span className="text-slate-800 dark:text-slate-200 font-medium">{location}</span>
               )}
             </div>
 
-            {/* Phone */}
             <div className="flex items-center gap-3">
               <Phone className="w-4 h-4 text-slate-900 dark:text-slate-200 shrink-0 stroke-[2.2]" />
               {isEditing ? (
@@ -361,147 +469,152 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                   type="text"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="(212) 555-7890"
-                  className="w-full bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-maroon-900 focus:outline-hidden font-mono"
+                  placeholder="+91 98765-43210"
+                  className="w-full bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs font-mono"
                 />
               ) : (
-                <span className="text-xs font-medium text-slate-800 dark:text-slate-200 font-mono">
-                  {formData.phone || "(212) 555-7890"}
-                </span>
+                <span className="text-slate-800 dark:text-slate-200 font-mono font-medium">{formData.phone}</span>
               )}
             </div>
 
-            {/* Email */}
             <div className="flex items-center gap-3">
               <Mail className="w-4 h-4 text-slate-900 dark:text-slate-200 shrink-0 stroke-[2.2]" />
-              <span className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
-                {user?.email || "drchen@gmail.com"}
+              <span className="text-slate-800 dark:text-slate-200 font-medium truncate">
+                {user?.email || "student@placify.internal"}
+              </span>
+              <span className="ml-auto text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold">
+                VERIFIED
+              </span>
+            </div>
+          </div>
+
+          {/* Bento Card: Core Competencies & Skills */}
+          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-3 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                Core Competencies & Languages
+              </span>
+              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+                PR Approved ✓
               </span>
             </div>
 
-            {/* Competencies / Languages Bullet List */}
-            <div className="pt-3 space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold tracking-wider uppercase text-slate-400">
-                  Languages & Competencies
-                </span>
-              </div>
-              <ul className="space-y-1.5 pl-1">
-                {competencies.map((comp, idx) => (
-                  <li key={idx} className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-900 dark:bg-slate-300" />
-                      <span>{comp}</span>
-                    </div>
-                    {isEditing && (
-                      <button
-                        onClick={() => removeCompetency(idx)}
-                        className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
-                        title="Remove"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
+            <ul className="space-y-1.5 pl-1">
+              {competencies.map((comp, idx) => (
+                <li key={idx} className="flex items-center justify-between text-slate-700 dark:text-slate-300">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-900 dark:bg-slate-300" />
+                    <span>{comp}</span>
+                  </div>
+                  {isEditing && (
+                    <button
+                      onClick={() => removeCompetency(idx)}
+                      className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                      title="Remove"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
 
-              {isEditing && (
-                <div className="flex items-center gap-2 pt-1">
+            {isEditing && (
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="text"
+                  placeholder="Add skill (e.g. Kubernetes)..."
+                  value={newCompetency}
+                  onChange={(e) => setNewCompetency(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addCompetency()}
+                  className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs focus:ring-1 focus:ring-maroon-900 focus:outline-hidden"
+                />
+                <Button
+                  size="sm"
+                  onClick={addCompetency}
+                  className="h-7 px-2.5 rounded-lg bg-maroon-900 hover:bg-maroon-800 text-white text-[11px]"
+                >
+                  Add
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Bento Card: Verified Social Footprints */}
+          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-3">
+            <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+              Verified Profiles
+            </div>
+
+            {isEditing ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Linkedin className="w-4 h-4 text-maroon-900 dark:text-maroon-300 shrink-0" />
                   <input
                     type="text"
-                    placeholder="Add item (e.g. French)..."
-                    value={newCompetency}
-                    onChange={(e) => setNewCompetency(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && addCompetency()}
-                    className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs focus:ring-1 focus:ring-maroon-900 focus:outline-hidden"
+                    placeholder="LinkedIn URL"
+                    value={formData.linkedin_url}
+                    onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs font-mono"
                   />
-                  <Button
-                    size="sm"
-                    onClick={addCompetency}
-                    className="h-7 px-2.5 rounded-lg bg-maroon-900 hover:bg-maroon-800 text-white text-[11px]"
-                  >
-                    Add
-                  </Button>
                 </div>
-              )}
-            </div>
-
-            {/* Social / Portfolio Profiles */}
-            <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800 space-y-2">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Professional Links
-              </div>
-              {isEditing ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Linkedin className="w-4 h-4 text-maroon-900 dark:text-maroon-300 shrink-0" />
-                    <input
-                      type="text"
-                      placeholder="https://linkedin.com/in/..."
-                      value={formData.linkedin_url}
-                      onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Github className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" />
-                    <input
-                      type="text"
-                      placeholder="https://github.com/..."
-                      value={formData.github_url}
-                      onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs"
-                    />
-                  </div>
-                </div>
-              ) : (
                 <div className="flex items-center gap-2">
-                  {formData.linkedin_url && (
-                    <a
-                      href={formData.linkedin_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:text-maroon-900 dark:hover:text-white flex items-center gap-1.5 text-xs font-semibold"
-                    >
-                      <Linkedin className="w-3.5 h-3.5 text-maroon-900 dark:text-maroon-300" />
-                      <span>LinkedIn</span>
-                    </a>
-                  )}
-                  {formData.github_url && (
-                    <a
-                      href={formData.github_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:text-maroon-900 dark:hover:text-white flex items-center gap-1.5 text-xs font-semibold"
-                    >
-                      <Github className="w-3.5 h-3.5" />
-                      <span>GitHub</span>
-                    </a>
-                  )}
+                  <Github className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="GitHub URL"
+                    value={formData.github_url}
+                    onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs font-mono"
+                  />
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                {formData.linkedin_url && (
+                  <a
+                    href={formData.linkedin_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:text-maroon-900 dark:hover:text-white flex items-center gap-1.5 text-xs font-semibold"
+                  >
+                    <Linkedin className="w-3.5 h-3.5 text-maroon-900 dark:text-maroon-300" />
+                    <span>LinkedIn</span>
+                  </a>
+                )}
+                {formData.github_url && (
+                  <a
+                    href={formData.github_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:text-maroon-900 dark:hover:text-white flex items-center gap-1.5 text-xs font-semibold"
+                  >
+                    <Github className="w-3.5 h-3.5" />
+                    <span>GitHub</span>
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {/* =========================================================================
-            COLUMN 2: NAME, AI SUMMARY, RATINGS & DATA VISUALIZATIONS (5 COLS)
+            BENTO QUADRANTS 2 & 3: ACADEMIC & TECHNICAL SHOWCASE (5 Columns)
             ========================================================================= */}
-        <div className="lg:col-span-5 space-y-7">
-          {/* Header Title & Department */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Header Name & Department */}
           <div className="space-y-1">
             {isEditing ? (
               <div className="space-y-2">
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Full Name & Credential
+                    Full Name & Title
                   </label>
                   <input
                     type="text"
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    placeholder="e.g. Dr. Emily Chen, MD"
+                    placeholder="e.g. Arnav Sharma"
                     className="w-full text-3xl sm:text-4xl font-black text-slate-900 dark:text-white bg-transparent border-b-2 border-maroon-900/30 focus:border-maroon-900 focus:outline-hidden py-1 tracking-tight"
                   />
                 </div>
@@ -513,7 +626,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                     type="text"
                     value={formData.department}
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    placeholder="INTERNAL MEDICINE, CARDIOLOGY"
+                    placeholder="COMPUTER SCIENCE & ENGINEERING"
                     className="w-full text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-transparent border-b border-slate-200 dark:border-slate-700 py-1 focus:outline-hidden"
                   />
                 </div>
@@ -521,10 +634,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
             ) : (
               <div>
                 <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                  {formData.full_name || "Dr. Emily Chen, MD"}
+                  {formData.full_name || "Arnav Sharma"}
                 </h1>
                 <div className="text-[11px] font-bold tracking-widest text-slate-500 dark:text-slate-400 uppercase mt-1">
-                  {formData.department || "INTERNAL MEDICINE, CARDIOLOGY"}
+                  {formData.department || "COMPUTER SCIENCE & ENGINEERING"}
                 </div>
               </div>
             )}
@@ -534,8 +647,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
           <div className="flex flex-col sm:flex-row items-stretch rounded-[24px] overflow-hidden border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
             {/* Left Lime Rating Badge */}
             <div className="bg-[#D4F436] text-slate-950 p-6 sm:w-36 flex flex-col items-center justify-center text-center shrink-0">
-              <div className="text-4xl font-black tracking-tight leading-none">4.8</div>
-              <div className="text-xs font-bold mt-1 text-slate-900">38 reviews</div>
+              <div className="text-4xl font-black tracking-tight leading-none">4.9</div>
+              <div className="text-xs font-bold mt-1 text-slate-900">Placement Index</div>
             </div>
 
             {/* Right AI Summary Content (Editable Bio) */}
@@ -543,7 +656,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
               <div className="flex items-center justify-between">
                 <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-[#8CBF00] dark:text-[#D4F436]" />
-                  AI SUMMARY
+                  AI CANDIDATE EVALUATION
                 </div>
                 {isEditing && (
                   <button
@@ -572,177 +685,225 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
             </div>
           </div>
 
-          {/* 3 Metrics Ratings Row with Stars matching HealthRate (WAIT TIME, BEDSIDE MANNER, CLEAR EXPLANATIONS) */}
-          <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-200/80 dark:border-slate-800">
-            <div>
-              <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                WAIT TIME
+          {/* Bento Sub-Grid: Academic & Placement Status (CGPA, Backlogs, Tier 1, PPO) */}
+          <div className="p-5 rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-maroon-900 dark:text-maroon-300" />
+                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                  Academic & Placement Credentials
+                </span>
               </div>
-              <div className="flex items-center gap-1.5 mt-1">
-                <div className="flex text-amber-400 text-xs">★★★★★</div>
-                <span className="font-bold text-xs text-slate-900 dark:text-white font-mono">4.63</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-800">
+                Verified by {academicStats.verifiedBy}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800">
+                <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider">CGPA</div>
+                <div className="text-xl font-black text-slate-900 dark:text-white font-mono mt-0.5">
+                  {academicStats.cgpa}
+                </div>
+                <div className="text-[10px] text-slate-500 font-medium">Scale of 10.0</div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800">
+                <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Backlogs</div>
+                <div className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+                  {academicStats.backlogs}
+                </div>
+                <div className="text-[10px] text-slate-500 font-medium">Clean Record</div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800">
+                <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Eligibility</div>
+                <div className="text-sm font-black text-maroon-900 dark:text-maroon-300 mt-1">
+                  Super Dream
+                </div>
+                <div className="text-[10px] text-slate-500 font-medium">Tier 1 Unlimited</div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800">
+                <div className="text-[10px] font-black uppercase text-slate-400 tracking-wider">ATS Score</div>
+                <div className="text-xl font-black text-[#8CBF00] font-mono mt-0.5">
+                  {academicStats.atsScore}%
+                </div>
+                <div className="text-[10px] text-slate-500 font-medium">ATS High Rank</div>
               </div>
             </div>
 
-            <div>
-              <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                BEDSIDE MANNER
+            {/* PPO Offer Highlight Bar */}
+            <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Award className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-xs font-bold text-slate-900 dark:text-white">
+                  Active Placement Offer (PPO)
+                </span>
               </div>
-              <div className="flex items-center gap-1.5 mt-1">
-                <div className="flex text-amber-400 text-xs">★★★★★</div>
-                <span className="font-bold text-xs text-slate-900 dark:text-white font-mono">4.19</span>
+              <span className="text-xs font-black font-mono text-emerald-700 dark:text-emerald-300">
+                {academicStats.ppoStatus}
+              </span>
+            </div>
+          </div>
+
+          {/* Bento Sub-Grid: Technical Footprint (LeetCode, GitHub, Tech Stack) */}
+          <div className="p-5 rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Code2 className="w-4 h-4 text-maroon-900 dark:text-maroon-300" />
+                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                  Technical Footprint & Coding Metrics
+                </span>
+              </div>
+              <span className="text-[10px] font-mono text-slate-400">Live Profiles</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] font-black uppercase text-slate-400">LeetCode Contest Rating</div>
+                  <div className="text-base font-black text-slate-900 dark:text-white font-mono mt-0.5">
+                    {techStats.leetcodeRating}
+                  </div>
+                </div>
+                <span className="px-2 py-1 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-[10px] font-bold font-mono">
+                  {techStats.leetcodeSolved}
+                </span>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] font-black uppercase text-slate-400">GitHub Contributions</div>
+                  <div className="text-base font-black text-slate-900 dark:text-white font-mono mt-0.5">
+                    {techStats.githubCommits}
+                  </div>
+                </div>
+                <span className="px-2 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold font-mono">
+                  Top 5%
+                </span>
               </div>
             </div>
 
-            <div>
-              <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                CLEAR EXPLANATIONS
+            {/* Primary Stack Badges */}
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Core Stack Proficiency
               </div>
-              <div className="flex items-center gap-1.5 mt-1">
-                <div className="flex text-amber-400 text-xs">★★★★★</div>
-                <span className="font-bold text-xs text-slate-900 dark:text-white font-mono">4.74</span>
+              <div className="flex flex-wrap gap-1.5">
+                {techStats.primaryStack.map((tech, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold font-mono border border-slate-200 dark:border-slate-700"
+                  >
+                    {tech}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Top Patient Visit Reasons / Specializations Donut Graphic with Leader Percentages */}
-          <div className="space-y-3">
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Top Patient Visit Reasons
-            </h3>
-
-            <div className="flex flex-col sm:flex-row items-center gap-6 pt-1">
-              {/* SVG Donut */}
-              <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
-                <svg className="w-28 h-28 transform -rotate-90" viewBox="0 0 36 36">
-                  {/* Segment 1: Deep Teal #004D47 (35%) */}
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="14"
-                    fill="none"
-                    stroke="#004D47"
-                    strokeWidth="4.5"
-                    strokeDasharray="35 65"
-                    strokeDashoffset="0"
-                  />
-                  {/* Segment 2: Lime #D4F436 (25%) */}
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="14"
-                    fill="none"
-                    stroke="#D4F436"
-                    strokeWidth="4.5"
-                    strokeDasharray="25 75"
-                    strokeDashoffset="-35"
-                  />
-                  {/* Segment 3: Mint #8FE388 (22%) */}
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="14"
-                    fill="none"
-                    stroke="#8FE388"
-                    strokeWidth="4.5"
-                    strokeDasharray="22 78"
-                    strokeDashoffset="-60"
-                  />
-                  {/* Segment 4: Warm Gray #D6DCD0 (18%) */}
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="14"
-                    fill="none"
-                    stroke="#D6DCD0"
-                    strokeWidth="4.5"
-                    strokeDasharray="18 82"
-                    strokeDashoffset="-82"
-                  />
-                </svg>
-                {/* Center hole */}
-                <div className="absolute w-16 h-16 rounded-full bg-[#f8fafc] dark:bg-slate-950 flex items-center justify-center">
-                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">100%</span>
-                </div>
+          {/* Bento Sub-Grid: Verified Capstone Projects Showcase */}
+          <div className="p-5 rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <FolderGit2 className="w-4 h-4 text-maroon-900 dark:text-maroon-300" />
+                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                  Verified Capstone Projects (PR Cell Verified)
+                </span>
               </div>
+              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                2 Pinned
+              </span>
+            </div>
 
-              {/* Dotted Leader Breakdown matching reference */}
-              <div className="flex-1 w-full space-y-2 text-xs">
-                <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#004D47]" />
-                    <span>Hypertension Management</span>
+            <div className="space-y-3">
+              {projects.map((proj) => (
+                <div
+                  key={proj.id}
+                  className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-800 hover:border-maroon-900/40 transition-colors space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-2">
+                      <span>{proj.title}</span>
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-semibold">
+                        PR VERIFIED ✓
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setSelectedProject(proj);
+                        setActiveDrawer("project");
+                      }}
+                      className="h-7 px-2.5 text-[11px] text-maroon-900 dark:text-maroon-300 hover:bg-maroon-50 dark:hover:bg-maroon-950/50 font-bold cursor-pointer"
+                    >
+                      <span>Deep Dive</span>
+                      <ChevronRight className="w-3 h-3 ml-1" />
+                    </Button>
                   </div>
-                  <span className="font-bold text-slate-900 dark:text-white font-mono">35%</span>
-                </div>
-
-                <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#D4F436]" />
-                    <span>Preventive Cardiology</span>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
+                    {proj.description}
+                  </p>
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {proj.technologies.map((t, tidx) => (
+                      <span
+                        key={tidx}
+                        className="text-[10px] font-mono px-2 py-0.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
+                      >
+                        {t}
+                      </span>
+                    ))}
                   </div>
-                  <span className="font-bold text-slate-900 dark:text-white font-mono">25%</span>
                 </div>
-
-                <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#8FE388]" />
-                    <span>Heart Failure Monitoring</span>
-                  </div>
-                  <span className="font-bold text-slate-900 dark:text-white font-mono">22%</span>
-                </div>
-
-                <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#D6DCD0]" />
-                    <span>Chest Pain Evaluation</span>
-                  </div>
-                  <span className="font-bold text-slate-900 dark:text-white font-mono">18%</span>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* Professional Activities Horizontal Stacked Bar */}
+          {/* Segmented Bar Graphic: Engineering Distribution */}
           <div className="space-y-2 pt-1">
             <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Professional Activities
+              Engineering Distribution
             </h3>
 
             <div className="flex h-5 w-full rounded-lg overflow-hidden gap-1">
-              <div className="h-full bg-[#004D47] rounded-l-md" style={{ width: "47%" }} title="Clinical Consultations (47%)" />
-              <div className="h-full bg-[#C8E24D]" style={{ width: "24%" }} title="Diagnostic Procedures (24%)" />
-              <div className="h-full bg-[#D4F436]" style={{ width: "16%" }} title="Post-Op Follow-ups (16%)" />
-              <div className="h-full bg-[#C2CDB4]" style={{ width: "10%" }} title="Clinical Research (10%)" />
-              <div className="h-full bg-[#E2E4DC] rounded-r-md" style={{ width: "3%" }} title="Administration (3%)" />
+              <div className="h-full bg-[#004D47] rounded-l-md" style={{ width: "47%" }} title="Backend & Distributed (47%)" />
+              <div className="h-full bg-[#C8E24D]" style={{ width: "24%" }} title="Algorithms & Data Structs (24%)" />
+              <div className="h-full bg-[#D4F436]" style={{ width: "16%" }} title="System Design & Cloud (16%)" />
+              <div className="h-full bg-[#C2CDB4]" style={{ width: "10%" }} title="Frontend & UX (10%)" />
+              <div className="h-full bg-[#E2E4DC] rounded-r-md" style={{ width: "3%" }} title="Audits & Testing (3%)" />
             </div>
 
             <div className="flex justify-between text-[11px] font-mono text-slate-500 dark:text-slate-400 pt-0.5">
-              <span>47%</span>
-              <span>24%</span>
-              <span>16%</span>
-              <span>10%</span>
-              <span>3%</span>
+              <span>47% Backend</span>
+              <span>24% DSA</span>
+              <span>16% Cloud</span>
+              <span>10% UI</span>
+              <span>3% QA</span>
             </div>
           </div>
         </div>
 
         {/* =========================================================================
-            COLUMN 3: BOOK AN APPOINTMENT CARD (3 COLS)
+            BENTO QUADRANT 4: BOOKING & MENTORSHIP ACTIONS (3 Columns)
             ========================================================================= */}
         <div className="lg:col-span-3 space-y-5">
-          {/* Main Elevated Appointment Card */}
+          {/* Main Elevated Appointment / Office Hours Card */}
           <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200/90 dark:border-slate-800 p-6 shadow-xs space-y-5">
             <div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-                Book an Appointment
+                {isStudent ? "Book Mock Interview / PR Audit" : "Book an Appointment"}
               </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Reserve 1:1 slot with faculty or placement coordinators
+              </p>
             </div>
 
             {/* Month & Week Selector */}
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200">
-                <span>June</span>
+                <span>September 2026</span>
                 <div className="flex items-center gap-1 text-slate-400">
                   <button className="p-1 hover:text-slate-700 dark:hover:text-slate-200 rounded cursor-pointer">
                     <ChevronLeft className="w-4 h-4" />
@@ -779,17 +940,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
                   );
                 })}
               </div>
-
-              <div className="text-right">
-                <button className="text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-medium">
-                  Show full calendar ▾
-                </button>
-              </div>
             </div>
 
             {/* Time Slot Picker */}
             <div className="space-y-3 pt-1">
-              <div className="text-xs font-bold text-slate-900 dark:text-white">Time</div>
+              <div className="text-xs font-bold text-slate-900 dark:text-white">Time Slots</div>
 
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
@@ -817,7 +972,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
 
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                  DAY
+                  AFTERNOON
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {afternoonSlots.map((slot) => {
@@ -848,29 +1003,265 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onProfileUpdated
               }}
               className="w-full bg-[#D4F436] hover:bg-[#c2e428] text-slate-950 font-black text-xs h-11 rounded-2xl shadow-sm transition-transform active:scale-98 cursor-pointer mt-2"
             >
-              {bookingSuccess ? "Appointment Reserved ✓" : "Book Now"}
+              {bookingSuccess ? "Session Confirmed ✓" : "Book 1:1 Session"}
             </Button>
+          </div>
 
-            {/* In-Place Quick Save & Reset Controls */}
-            <div className="pt-2 flex items-center justify-between text-xs">
-              <button
-                onClick={handleResetDefaults}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center gap-1 cursor-pointer"
-              >
-                <RotateCcw className="w-3 h-3" /> Reset
-              </button>
-
-              <button
-                onClick={() => handleSaveProfile()}
-                disabled={isSaving}
-                className="text-maroon-900 dark:text-maroon-300 hover:underline font-bold cursor-pointer"
-              >
-                {isSaving ? "Saving..." : "Save Edits ↑"}
-              </button>
+          {/* Bento Card: Peer & Senior Mentorship Endorsements */}
+          <div className="p-5 rounded-[28px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-maroon-900 dark:text-maroon-300" />
+                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                  Senior Peer Mentorship
+                </span>
+              </div>
+              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                4.9 / 5.0
+              </span>
             </div>
+
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 space-y-1.5">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200">
+                <span>Rohan Verma (Senior @ Google)</span>
+                <div className="flex text-amber-400 text-[10px]">★★★★★</div>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
+                "Exceptional depth in concurrent systems and gRPC architecture. Cleared mock bar easily."
+              </p>
+            </div>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setActiveDrawer("endorsements")}
+              className="w-full h-8 rounded-xl text-[11px] font-bold text-maroon-900 dark:text-maroon-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+            >
+              View Senior Recommendations
+            </Button>
+          </div>
+
+          {/* Reset & Quick Navigation */}
+          <div className="pt-1 flex items-center justify-between text-xs px-1">
+            <button
+              onClick={handleResetDefaults}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center gap-1 cursor-pointer"
+            >
+              <RotateCcw className="w-3 h-3" /> Reset Defaults
+            </button>
+
+            <button
+              onClick={() => handleSaveProfile()}
+              disabled={isSaving}
+              className="text-maroon-900 dark:text-maroon-300 hover:underline font-bold cursor-pointer"
+            >
+              {isSaving ? "Saving..." : "Save Edits ↑"}
+            </button>
           </div>
         </div>
       </div>
+
+      {/* =========================================================================
+          INTERACTIVE SLIDE-OVER DRAWERS
+          ========================================================================= */}
+
+      {/* 1. RESUME VIEWER & VERSION MANAGER DRAWER */}
+      {activeDrawer === "resume" && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full p-6 shadow-2xl flex flex-col justify-between border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-300">
+            <div className="space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-maroon-900 dark:text-maroon-300" />
+                  <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
+                    Primary Verified Resume
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setActiveDrawer(null)}
+                  className="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Resume Card Preview */}
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-slate-900 dark:text-white">
+                    Arnav_Sharma_Resume_2026.pdf
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold">
+                    PR VERIFIED
+                  </span>
+                </div>
+                <div className="text-xs text-slate-500 space-y-1 font-mono">
+                  <div>• Size: 242 KB (Single Page PDF)</div>
+                  <div>• ATS Readability: 94 / 100</div>
+                  <div>• Last verified: Sept 12, 2026 by Dr. Mary Issac</div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                <Button
+                  className="w-full h-10 rounded-2xl bg-maroon-900 hover:bg-maroon-800 text-white font-bold text-xs gap-2 cursor-pointer"
+                  onClick={() => alert("Downloading verified PDF...")}
+                >
+                  <Download className="w-4 h-4" /> Download Official Resume PDF
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full h-10 rounded-2xl text-xs font-semibold gap-2 border-slate-200 dark:border-slate-800 cursor-pointer"
+                  onClick={() => alert("Opening ATS verification report...")}
+                >
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" /> View ATS Scoring Breakdown
+                </Button>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-3 text-[11px] text-slate-400 text-center">
+              Verified by Central Placement Cell • Encrypted Document Hash: #a8f09d2
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. CAPSTONE PROJECT DEEP-DIVE DRAWER */}
+      {activeDrawer === "project" && selectedProject && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full p-6 shadow-2xl flex flex-col justify-between border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-300">
+            <div className="space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <FolderGit2 className="w-5 h-5 text-maroon-900 dark:text-maroon-300" />
+                  <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
+                    Project Deep Dive
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setActiveDrawer(null)}
+                  className="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-black text-slate-900 dark:text-white">
+                  {selectedProject.title}
+                </h4>
+                <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                  {selectedProject.verifiedBy}
+                </span>
+              </div>
+
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                {selectedProject.description}
+              </p>
+
+              {/* Technologies */}
+              <div className="space-y-1.5">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Tech Stack Architecture
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedProject.technologies.map((t, i) => (
+                    <span
+                      key={i}
+                      className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-mono font-semibold"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Links */}
+              <div className="space-y-2 pt-2">
+                <a
+                  href={selectedProject.githubUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-900 dark:text-white"
+                >
+                  <Github className="w-4 h-4" /> View Source Code
+                </a>
+                <a
+                  href={selectedProject.demoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-2xl bg-maroon-900 hover:bg-maroon-800 text-xs font-bold text-white"
+                >
+                  <ExternalLink className="w-4 h-4" /> Live Demo Deployment
+                </a>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-3 text-[11px] text-slate-400 text-center">
+              Audited by Placement Review Committee
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. SENIOR RECOMMENDATIONS & ENDORSEMENTS DRAWER */}
+      {activeDrawer === "endorsements" && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full p-6 shadow-2xl flex flex-col justify-between border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-300">
+            <div className="space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-maroon-900 dark:text-maroon-300" />
+                  <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
+                    Senior Recommendations
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setActiveDrawer(null)}
+                  className="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-slate-900 dark:text-white">
+                      Rohan Verma • Google SWE-2 (Batch '24)
+                    </span>
+                    <span className="text-amber-500 text-xs">★★★★★</span>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    "Arnav's algorithmic intuition is top-tier. In our 60-minute mock interview, he designed a distributed rate limiter with sliding window logs effortlessly."
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-slate-900 dark:text-white">
+                      Priya Nair • Microsoft SDE (Batch '25)
+                    </span>
+                    <span className="text-amber-500 text-xs">★★★★★</span>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    "Very communicative problem solver. Great understanding of database internals, indexing tradeoffs, and isolation levels."
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              className="w-full h-10 rounded-2xl bg-[#D4F436] hover:bg-[#c2e428] text-slate-950 font-black text-xs cursor-pointer"
+              onClick={() => setActiveDrawer(null)}
+            >
+              Close Recommendations
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

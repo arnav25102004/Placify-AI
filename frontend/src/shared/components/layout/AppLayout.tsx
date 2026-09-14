@@ -23,7 +23,10 @@ import {
   ShieldAlert,
   LogOut,
   User,
-  Database
+  Database,
+  PanelLeftClose,
+  PanelLeft,
+  ChevronRight,
 } from "lucide-react";
 import { ThemeToggle } from "@/shared/components/ui/theme-toggle";
 import { Input } from "@/shared/components/ui/input";
@@ -76,6 +79,23 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("placify_sidebar_collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("placify_sidebar_collapsed", String(next));
+      } catch {}
+      return next;
+    });
+  };
 
   // Role metadata config: navigation items tailored strictly to each role's authorized capabilities
   const roleNavItems: Record<UserRole, NavItemConfig[]> = {
@@ -189,27 +209,40 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
       {/* Sidebar Navigation */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800/80 flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
-          mobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
-        }`}
+        className={`fixed top-0 bottom-0 left-0 z-50 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800/80 flex flex-col justify-between transition-all duration-300 ease-in-out lg:translate-x-0 ${
+          mobileMenuOpen ? "translate-x-0 shadow-2xl w-64" : "-translate-x-full"
+        } ${isCollapsed ? "lg:w-[72px]" : "lg:w-64"}`}
       >
-        {/* Top Part: Brand + Role Badge + Nav Items */}
-        <div className="flex flex-col flex-1 overflow-y-auto px-4 pt-5 pb-4 space-y-4">
+        {/* Top Part: Brand + Collapse Button + Role Badge + Nav Items */}
+        <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden px-3 pt-5 pb-4 space-y-4">
           {/* Brand Logo Header */}
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
+          <div className="flex items-center justify-between px-1">
+            <div className={`flex items-center gap-2.5 min-w-0 ${isCollapsed ? "justify-center w-full" : ""}`}>
+              <div className="w-8 h-8 rounded-xl bg-maroon-900 flex items-center justify-center text-white shadow-sm shadow-maroon-900/30 shrink-0">
                 <Shield className="w-4 h-4 fill-white" />
               </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-lg text-slate-900 dark:text-white tracking-tight leading-none">
-                  Placify
-                </span>
-                <span className="text-[10px] text-slate-400 font-medium tracking-wide">
-                  Placement Intelligence
-                </span>
-              </div>
+              {!isCollapsed && (
+                <div className="flex flex-col min-w-0 animate-in fade-in duration-200">
+                  <span className="font-extrabold text-lg text-slate-900 dark:text-white tracking-tight leading-none">
+                    Placify
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium tracking-wide">
+                    Placement Intelligence
+                  </span>
+                </div>
+              )}
             </div>
+
+            {/* Collapse Toggle Button (Desktop) */}
+            <button
+              onClick={toggleSidebar}
+              className={`hidden lg:flex p-1.5 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
+                isCollapsed ? "mx-auto mt-2" : ""
+              }`}
+              title={isCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
+            >
+              {isCollapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+            </button>
 
             {/* Mobile close button */}
             <button
@@ -221,16 +254,24 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           </div>
 
           {/* Active Role Identifier Pill */}
-          <div className="px-2">
-            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                  {currentProfile.roleLabel}
-                </span>
+          {!isCollapsed ? (
+            <div className="px-1 animate-in fade-in duration-200">
+              <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                    {currentProfile.roleLabel}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex justify-center px-1" title={currentProfile.roleLabel}>
+              <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-center">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              </div>
+            </div>
+          )}
 
           {/* Role Navigation Items */}
           <nav className="space-y-1">
@@ -244,29 +285,32 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     onNavSelect(item.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer relative ${
+                  title={isCollapsed ? item.label : undefined}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-medium transition-all cursor-pointer relative group ${
+                    isCollapsed ? "justify-center px-2" : ""
+                  } ${
                     isActive
-                      ? "bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-semibold"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                      ? "bg-maroon-50 dark:bg-maroon-950/60 text-maroon-900 dark:text-maroon-200 font-bold shadow-2xs border border-maroon-200/80 dark:border-maroon-900/60"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
                   }`}
                 >
                   {/* Subtle active left pill bar */}
-                  {isActive && (
-                    <span className="absolute left-0 top-2 bottom-2 w-1 bg-blue-600 rounded-r-full" />
+                  {isActive && !isCollapsed && (
+                    <span className="absolute left-0 top-2 bottom-2 w-1 bg-maroon-900 dark:bg-maroon-400 rounded-r-full" />
                   )}
                   <Icon
-                    className={`w-4 h-4 ${
+                    className={`w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110 ${
                       isActive
-                        ? "text-blue-600 dark:text-blue-400"
+                        ? "text-maroon-900 dark:text-maroon-300"
                         : "text-slate-400 dark:text-slate-500"
                     }`}
                   />
-                  <span className="truncate">{item.label}</span>
-                  {item.badge && (
+                  {!isCollapsed && <span className="truncate">{item.label}</span>}
+                  {!isCollapsed && item.badge && (
                     <span
-                      className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                      className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
                         isActive
-                          ? "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400"
+                          ? "bg-maroon-100 dark:bg-maroon-950 text-maroon-900 dark:text-maroon-200"
                           : "bg-slate-100 dark:bg-slate-800 text-slate-500"
                       }`}
                     >
@@ -279,88 +323,92 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           </nav>
         </div>
 
-        {/* Bottom Part: Settings, Help & User Profile */}
-        <div className="p-4 border-t border-slate-200/80 dark:border-slate-800/80 space-y-3">
-          {/* Utilities */}
-          <div className="space-y-0.5">
-            <button
-              onClick={() => onNavSelect("profile")}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
-                activeNavId === "profile"
-                  ? "bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-semibold"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
-              }`}
-            >
-              <User className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-              <span>My Profile</span>
-            </button>
+        {/* Bottom Part: Utilities (My Profile item removed) & User Profile */}
+        <div className="p-3 border-t border-slate-200/80 dark:border-slate-800/80 space-y-2">
+          {/* Utilities: Test DB Studio, Settings, Help */}
+          <div className="space-y-1">
             <button
               onClick={() => onNavSelect("dev_db")}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
+              title={isCollapsed ? "Test DB Studio" : undefined}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-2xl text-xs font-medium cursor-pointer transition-colors ${
+                isCollapsed ? "justify-center px-2" : ""
+              } ${
                 activeNavId === "dev_db"
                   ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-semibold border border-indigo-200 dark:border-indigo-800"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
               }`}
             >
               <div className="flex items-center gap-3">
-                <Database className="w-4 h-4 text-indigo-500" />
-                <span>Test DB Studio</span>
+                <Database className="w-4 h-4 text-indigo-500 shrink-0" />
+                {!isCollapsed && <span>Test DB Studio</span>}
               </div>
-              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-300 font-bold">
-                DEV
-              </span>
+              {!isCollapsed && (
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-300 font-bold">
+                  DEV
+                </span>
+              )}
             </button>
             <button
               onClick={() => onNavSelect("settings")}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
+              title={isCollapsed ? "Settings" : undefined}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-2xl text-xs font-medium cursor-pointer transition-colors ${
+                isCollapsed ? "justify-center px-2" : ""
+              } ${
                 activeNavId === "settings"
-                  ? "bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-semibold"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                  ? "bg-maroon-50 dark:bg-maroon-950/60 text-maroon-900 dark:text-maroon-200 font-semibold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
               }`}
             >
-              <Settings className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-              <span>Settings</span>
+              <Settings className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+              {!isCollapsed && <span>Settings</span>}
             </button>
             <button
               onClick={() => onNavSelect("help")}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
+              title={isCollapsed ? "Help & Support" : undefined}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-2xl text-xs font-medium cursor-pointer transition-colors ${
+                isCollapsed ? "justify-center px-2" : ""
+              } ${
                 activeNavId === "help"
-                  ? "bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-semibold"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                  ? "bg-maroon-50 dark:bg-maroon-950/60 text-maroon-900 dark:text-maroon-200 font-semibold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
               }`}
             >
-              <HelpCircle className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-              <span>Help & Support</span>
+              <HelpCircle className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+              {!isCollapsed && <span>Help & Support</span>}
             </button>
           </div>
 
-          {/* User Profile Card matching mockup */}
+          {/* User Profile Card button (The primary profile opener) */}
           <div
             onClick={() => onNavSelect("profile")}
-            className="pt-2 border-t border-slate-100 dark:border-slate-800/60 flex items-center gap-3 px-1 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 p-1.5 rounded-xl transition-colors group"
-            title="Edit Profile"
+            className={`pt-2 border-t border-slate-100 dark:border-slate-800/60 flex items-center gap-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/60 p-2 rounded-2xl transition-colors group ${
+              isCollapsed ? "justify-center p-1.5" : ""
+            } ${activeNavId === "profile" ? "ring-2 ring-maroon-900/40 bg-maroon-50/50 dark:bg-maroon-950/30" : ""}`}
+            title="Open Profile Page"
           >
             <div
-              className={`w-9 h-9 rounded-full ${currentProfile.avatarBg} flex items-center justify-center font-bold text-xs shrink-0 shadow-xs ring-2 ring-transparent group-hover:ring-blue-500/40 transition-all`}
+              className={`w-9 h-9 rounded-2xl ${currentProfile.avatarBg} flex items-center justify-center font-bold text-xs shrink-0 shadow-xs ring-2 ring-transparent group-hover:ring-maroon-900/40 transition-all`}
             >
               {currentProfile.initials}
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                {currentProfile.name}
+            {!isCollapsed && (
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-maroon-900 dark:group-hover:text-maroon-300 transition-colors">
+                  {currentProfile.name}
+                </div>
+                <div className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
+                  {userEmail || currentProfile.email}
+                </div>
               </div>
-              <div className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
-                {userEmail || currentProfile.email}
-              </div>
-            </div>
-            {onLogout && (
+            )}
+            {!isCollapsed && onLogout && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onLogout();
                 }}
                 title="Sign Out"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
               </button>
@@ -369,8 +417,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         </div>
       </aside>
 
-      {/* Main Content Wrapper (shifted by sidebar width on desktop) */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+      {/* Main Content Wrapper (dynamically adjusted by isCollapsed) */}
+      <div
+        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
+          isCollapsed ? "lg:pl-[72px]" : "lg:pl-64"
+        }`}
+      >
         {/* Top Header Bar */}
         <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Left: Mobile trigger & Search input */}
@@ -380,6 +432,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               className="lg:hidden p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <Menu className="w-5 h-5" />
+            </button>
+
+            {/* Desktop Sidebar Toggle in Header */}
+            <button
+              onClick={toggleSidebar}
+              className="hidden lg:flex p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            >
+              <PanelLeft className="w-4 h-4" />
             </button>
 
             {/* Top Search Bar */}

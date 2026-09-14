@@ -7,8 +7,9 @@ import { api, UserProfileData } from "@/shared/lib";
 import { PRPipelinePage } from "@/modules/pr";
 import { FacultyVerificationWorkspacePage, DocumentHistoryPage, CompareDocumentPage } from "@/modules/verification";
 import { CoordinatorDrivesPage } from "@/modules/coordinator";
-import { StudentDashboardPage } from "@/modules/student";
+import { StudentDashboardPage, SeniorsPage, PreviousCompaniesPage } from "@/modules/student";
 import { AdminOverviewPage } from "@/modules/admin";
+import { ProfilePage } from "@/modules/profile";
 import {
   UploadCloud,
   FileCheck2,
@@ -83,6 +84,19 @@ export const App: React.FC = () => {
   };
 
   const renderContent = () => {
+    // Universal Profile Page accessible by any authenticated user/role
+    if (activeNavId === "profile") {
+      return (
+        <ProfilePage
+          user={currentUser}
+          onProfileUpdated={(updated) => {
+            setCurrentUser(updated);
+            api.setUser(updated);
+          }}
+        />
+      );
+    }
+
     // 1. SUPER ADMIN: Unrestricted access across all modules & systems
     if (currentRole === "admin") {
       switch (activeNavId) {
@@ -100,6 +114,14 @@ export const App: React.FC = () => {
           return <PRPipelinePage />;
         case "student_dashboard":
           return <StudentDashboardPage />;
+        case "seniors":
+          return <SeniorsPage />;
+        case "companies":
+          return (
+            <PreviousCompaniesPage
+              onNavigateToSeniors={() => setActiveNavId("seniors")}
+            />
+          );
         default:
           return <AdminOverviewPage onNavigate={(target) => setActiveNavId(target)} />;
       }
@@ -244,9 +266,21 @@ export const App: React.FC = () => {
       }
     }
 
-    // 5. STUDENT: My placements, upload offer, senior placement directory
+    // 5. STUDENT: My placements, upload offer, senior placement directory, past recruiters
     if (currentRole === "student") {
-      return <StudentDashboardPage />;
+      switch (activeNavId) {
+        case "seniors":
+          return <SeniorsPage />;
+        case "companies":
+          return (
+            <PreviousCompaniesPage
+              onNavigateToSeniors={() => setActiveNavId("seniors")}
+            />
+          );
+        case "student_dashboard":
+        default:
+          return <StudentDashboardPage />;
+      }
     }
 
     // Fallbacks

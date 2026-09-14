@@ -51,6 +51,8 @@ def on_startup():
     logger.info("Starting Placify AI backend service...")
     logger.info("Verifying database connection and schemas...")
     Base.metadata.create_all(bind=engine)
+    from app.database import ensure_user_profile_columns
+    ensure_user_profile_columns(engine)
     seed_db()
     logger.info("Placify AI services online and verified ready for requests.")
 

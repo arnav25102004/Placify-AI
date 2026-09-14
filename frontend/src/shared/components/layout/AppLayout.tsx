@@ -16,11 +16,13 @@ import {
   FileCheck2,
   Users,
   Building,
+  Building2,
   GraduationCap,
   Sparkles,
   Check,
   ShieldAlert,
-  LogOut
+  LogOut,
+  User
 } from "lucide-react";
 import { ThemeToggle } from "@/shared/components/ui/theme-toggle";
 import { Input } from "@/shared/components/ui/input";
@@ -94,9 +96,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       { id: "erp_sync", label: "ERP Export Sync", icon: ArrowRightLeft },
       { id: "history", label: "Audit Log", icon: Clock },
     ],
-    // 4. Student — My placements, upload offer, senior placement directory
+    // 4. Student — My placements, upload offer, senior placement directory, past recruiters
     student: [
       { id: "student_dashboard", label: "Student Portal", icon: LayoutGrid },
+      { id: "seniors", label: "Senior Directory", icon: GraduationCap },
+      { id: "companies", label: "Past Recruiters", icon: Building2 },
     ],
     // 5. Admin — Full visibility across all modules
     admin: [
@@ -105,6 +109,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       { id: "coordinator_drives", label: "All Campus Drives", icon: Building },
       { id: "pr_pipeline", label: "PR Cohorts", icon: Users },
       { id: "student_dashboard", label: "Student View", icon: GraduationCap },
+      { id: "seniors", label: "Senior Directory", icon: GraduationCap },
+      { id: "companies", label: "Past Recruiters", icon: Building2 },
     ],
   };
 
@@ -276,6 +282,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           {/* Utilities */}
           <div className="space-y-0.5">
             <button
+              onClick={() => onNavSelect("profile")}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
+                activeNavId === "profile"
+                  ? "bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-semibold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+              }`}
+            >
+              <User className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+              <span>My Profile</span>
+            </button>
+            <button
               onClick={() => onNavSelect("settings")}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
                 activeNavId === "settings"
@@ -300,14 +317,18 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           </div>
 
           {/* User Profile Card matching mockup */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 flex items-center gap-3 px-1">
+          <div
+            onClick={() => onNavSelect("profile")}
+            className="pt-2 border-t border-slate-100 dark:border-slate-800/60 flex items-center gap-3 px-1 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 p-1.5 rounded-xl transition-colors group"
+            title="Edit Profile"
+          >
             <div
-              className={`w-9 h-9 rounded-full ${currentProfile.avatarBg} flex items-center justify-center font-bold text-xs shrink-0 shadow-xs`}
+              className={`w-9 h-9 rounded-full ${currentProfile.avatarBg} flex items-center justify-center font-bold text-xs shrink-0 shadow-xs ring-2 ring-transparent group-hover:ring-blue-500/40 transition-all`}
             >
               {currentProfile.initials}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+              <div className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                 {currentProfile.name}
               </div>
               <div className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
@@ -316,7 +337,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             </div>
             {onLogout && (
               <button
-                onClick={onLogout}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLogout();
+                }}
                 title="Sign Out"
                 className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
               >
@@ -482,17 +506,23 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   {currentRole === "student" && <Check className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
                 </DropdownMenuItem>
 
+                <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                <DropdownMenuItem
+                  onClick={() => onNavSelect("profile")}
+                  className="flex items-center gap-2 p-2 rounded-lg text-xs font-medium cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <User className="w-3.5 h-3.5 text-slate-500" />
+                  <span>My Profile & Settings</span>
+                </DropdownMenuItem>
+
                 {onLogout && (
-                  <>
-                    <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
-                    <DropdownMenuItem
-                      onClick={onLogout}
-                      className="flex items-center gap-2 p-2 rounded-lg text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      <span>Sign Out</span>
-                    </DropdownMenuItem>
-                  </>
+                  <DropdownMenuItem
+                    onClick={onLogout}
+                    className="flex items-center gap-2 p-2 rounded-lg text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
+                  </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>

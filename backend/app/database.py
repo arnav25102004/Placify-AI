@@ -34,9 +34,36 @@ SessionLocal = SessionProxy()
 Base = declarative_base()
 
 
+def ensure_user_profile_columns(target_engine=None):
+    """Safely adds missing profile columns to the users table if running on SQLite or pre-existing db."""
+    try:
+        from sqlalchemy import inspect, text
+        eng = target_engine or engine
+        inspector = inspect(eng)
+        if "users" in inspector.get_table_names():
+            existing_columns = {c["name"] for c in inspector.get_columns("users")}
+            expected_cols = {
+                "full_name": "VARCHAR",
+                "phone": "VARCHAR",
+                "department": "VARCHAR",
+                "designation": "VARCHAR",
+                "bio": "TEXT",
+                "avatar_url": "VARCHAR",
+                "linkedin_url": "VARCHAR",
+                "github_url": "VARCHAR",
+            }
+            with eng.begin() as conn:
+                for col_name, col_type in expected_cols.items():
+                    if col_name not in existing_columns:
+                        conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}"))
+    except Exception:
+        pass
+
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+

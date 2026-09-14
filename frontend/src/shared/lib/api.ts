@@ -6,7 +6,75 @@ export interface UserProfileData {
   role: string;
   campus_id: number;
   program?: string;
+  full_name?: string;
+  phone?: string;
+  department?: string;
+  designation?: string;
+  bio?: string;
+  avatar_url?: string;
+  linkedin_url?: string;
+  github_url?: string;
 }
+
+export interface UpdateProfilePayload {
+  full_name?: string;
+  phone?: string;
+  department?: string;
+  designation?: string;
+  bio?: string;
+  avatar_url?: string;
+  linkedin_url?: string;
+  github_url?: string;
+}
+
+export interface SeniorProfile {
+  id: number;
+  name: string;
+  batch: string;
+  department: string;
+  company: string;
+  role: string;
+  package_lpa: number;
+  offer_type: string;
+  skills: string[];
+  interview_experience?: string;
+  linkedin_url?: string;
+  email?: string;
+  referral_status: string;
+  campus: string;
+}
+
+export interface CreateSeniorPayload {
+  name: string;
+  batch: string;
+  department: string;
+  company: string;
+  role: string;
+  package_lpa: number;
+  offer_type?: string;
+  skills?: string[];
+  interview_experience?: string;
+  linkedin_url?: string;
+  email?: string;
+  referral_status?: string;
+  campus?: string;
+}
+
+export interface RecruitingCompany {
+  id: number;
+  name: string;
+  industry: string;
+  tier: string;
+  avg_package_lpa: number;
+  highest_package_lpa: number;
+  total_offers: number;
+  years_visited: string[];
+  roles: string[];
+  selection_process: string[];
+  eligibility: string;
+  website?: string;
+}
+
 
 export interface LoginResponse {
   access_token: string;
@@ -165,6 +233,79 @@ class ApiClient {
 
     return res.json();
   }
+
+  public async updateProfile(payload: UpdateProfilePayload): Promise<UserProfileData> {
+    const res = await fetch(`${API_BASE_URL}/auth/profile`, {
+      method: "PUT",
+      headers: this.getHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Failed to update profile" }));
+      throw new Error(err.detail || "Failed to update profile");
+    }
+
+    const data: UserProfileData = await res.json();
+    this.setUser(data);
+    return data;
+  }
+
+  public async getSeniors(params?: {
+    search?: string;
+    company?: string;
+    department?: string;
+    batch?: string;
+  }): Promise<SeniorProfile[]> {
+    const query = new URLSearchParams();
+    if (params?.search) query.append("search", params.search);
+    if (params?.company) query.append("company", params.company);
+    if (params?.department) query.append("department", params.department);
+    if (params?.batch) query.append("batch", params.batch);
+
+    const qs = query.toString();
+    const url = `${API_BASE_URL}/student/seniors${qs ? `?${qs}` : ""}`;
+    const res = await fetch(url, { method: "GET", headers: this.getHeaders() });
+    if (!res.ok) {
+      throw new Error("Failed to fetch seniors directory");
+    }
+    return res.json();
+  }
+
+  public async createSenior(payload: CreateSeniorPayload): Promise<SeniorProfile> {
+    const res = await fetch(`${API_BASE_URL}/student/seniors`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Failed to create senior" }));
+      throw new Error(err.detail || "Failed to create senior");
+    }
+
+    return res.json();
+  }
+
+  public async getPreviousCompanies(params?: {
+    search?: string;
+    industry?: string;
+    tier?: string;
+  }): Promise<RecruitingCompany[]> {
+    const query = new URLSearchParams();
+    if (params?.search) query.append("search", params.search);
+    if (params?.industry) query.append("industry", params.industry);
+    if (params?.tier) query.append("tier", params.tier);
+
+    const qs = query.toString();
+    const url = `${API_BASE_URL}/student/companies${qs ? `?${qs}` : ""}`;
+    const res = await fetch(url, { method: "GET", headers: this.getHeaders() });
+    if (!res.ok) {
+      throw new Error("Failed to fetch previous recruiting companies");
+    }
+    return res.json();
+  }
+
 
   public async uploadBatch(files: File[]): Promise<{ id: number; file_count: number; status: string }> {
     const formData = new FormData();

@@ -56,3 +56,54 @@ def test_student_offer_letter_submission_and_verification(client, student_auth_h
     )
     assert res_verify.status_code == 200
     assert res_verify.json()["status"] == "verified"
+
+
+def test_student_seniors_and_companies_flow(client):
+    # 1. Fetch Seniors Directory
+    res_seniors = client.get("/api/v1/student/seniors")
+    assert res_seniors.status_code == 200
+    seniors = res_seniors.json()
+    assert len(seniors) >= 5
+    assert any("Uber" in s["company"] for s in seniors)
+
+    # 2. Filter Seniors by Company & Search
+    res_filtered = client.get("/api/v1/student/seniors?company=Uber")
+    assert res_filtered.status_code == 200
+    assert all(s["company"] == "Uber" for s in res_filtered.json())
+
+    # 3. Add Dummy Senior details
+    new_senior_payload = {
+        "name": "Nandita Krishnan",
+        "batch": "2024",
+        "department": "Computer Science & Engineering",
+        "company": "NVIDIA",
+        "role": "Deep Learning Systems Engineer",
+        "package_lpa": 36.0,
+        "offer_type": "Full-Time",
+        "skills": ["CUDA", "C++", "PyTorch", "GPU Acceleration"],
+        "interview_experience": "Questions on parallel algorithms, matrix multiplication optimization, and CUDA memory hierarchy.",
+        "linkedin_url": "https://linkedin.com/in/nandita-k-nvidia",
+        "email": "nandita.k@alumni.christuniversity.in",
+        "referral_status": "Available",
+        "campus": "Bangalore Main Campus",
+    }
+    res_add = client.post("/api/v1/student/seniors", json=new_senior_payload)
+    assert res_add.status_code == 201
+    created = res_add.json()
+    assert created["name"] == "Nandita Krishnan"
+    assert created["company"] == "NVIDIA"
+    assert created["package_lpa"] == 36.0
+
+    # 4. Fetch Previous Companies
+    res_comp = client.get("/api/v1/student/companies")
+    assert res_comp.status_code == 200
+    companies = res_comp.json()
+    assert len(companies) >= 5
+    assert any(c["name"] == "Google India" for c in companies)
+
+    # 5. Filter Companies by Tier
+    res_super_dream = client.get("/api/v1/student/companies?tier=Super Dream (20+ LPA)")
+    assert res_super_dream.status_code == 200
+    assert len(res_super_dream.json()) > 0
+    assert all(c["tier"] == "Super Dream (20+ LPA)" for c in res_super_dream.json())
+

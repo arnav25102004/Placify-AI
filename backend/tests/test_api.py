@@ -109,3 +109,32 @@ def test_request_id_header_and_logging_correlation(client):
     assert res_custom.status_code == 200
     assert res_custom.headers.get("x-request-id") == custom_id
 
+
+def test_update_user_profile(client, auth_headers):
+    # Update profile fields
+    profile_data = {
+        "full_name": "Dr. Sarah Connor",
+        "phone": "+91 9876543210",
+        "department": "Computer Science & Engineering",
+        "designation": "Associate Professor & Placement Lead",
+        "bio": "Overseeing placement verification workflows and corporate outreach.",
+        "linkedin_url": "https://linkedin.com/in/sarah-connor",
+        "github_url": "https://github.com/sarahconnor",
+    }
+    res = client.put("/api/v1/auth/profile", json=profile_data, headers=auth_headers)
+    assert res.status_code == 200
+    updated = res.json()
+    assert updated["full_name"] == "Dr. Sarah Connor"
+    assert updated["phone"] == "+91 9876543210"
+    assert updated["department"] == "Computer Science & Engineering"
+    assert updated["designation"] == "Associate Professor & Placement Lead"
+    assert updated["bio"] == "Overseeing placement verification workflows and corporate outreach."
+
+    # Verify through GET /me
+    res_me = client.get("/api/v1/auth/me", headers=auth_headers)
+    assert res_me.status_code == 200
+    me_data = res_me.json()
+    assert me_data["full_name"] == "Dr. Sarah Connor"
+    assert me_data["linkedin_url"] == "https://linkedin.com/in/sarah-connor"
+
+

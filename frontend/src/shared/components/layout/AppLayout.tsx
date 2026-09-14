@@ -20,7 +20,6 @@ import {
   Sparkles,
   Check,
   ShieldAlert,
-  Activity,
   LogOut
 } from "lucide-react";
 import { ThemeToggle } from "@/shared/components/ui/theme-toggle";
@@ -273,21 +272,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               );
             })}
           </nav>
-
-          {/* Mid-Sidebar Widget: Intelligence Status Micro-Card */}
-          <div className="pt-2 px-1">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-transparent border border-slate-200/80 dark:border-slate-800 space-y-2">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <Activity className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Verification Engine
-                </span>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Active</span>
-              </div>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                Automated OCR, Fraud Audit & ERP Compliance active across campus.
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Bottom Part: Settings, Help & User Profile */}

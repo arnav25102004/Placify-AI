@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { UserRole } from "@/shared/types";
 import { ThemeProvider } from "@/shared/context/theme-context";
 import { AppLayout } from "@/shared/components/layout";
+import { LoginPage } from "@/modules/auth/pages/login/LoginPage";
+import { api, UserProfileData } from "@/shared/lib";
 import { PRPipelinePage } from "@/modules/pr";
 import { FacultyVerificationWorkspacePage, DocumentHistoryPage, CompareDocumentPage } from "@/modules/verification";
 import { CoordinatorDrivesPage } from "@/modules/coordinator";
@@ -15,10 +17,70 @@ import {
 } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+
 export const App: React.FC = () => {
-  // Default role is faculty (Teacher) matching user's initial mockup
-  const [currentRole, setCurrentRole] = useState<UserRole>("faculty");
-  const [activeNavId, setActiveNavId] = useState<string>("history");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [currentUser, setCurrentUser] = useState<UserProfileData | null>(() => api.getUser());
+  const [currentRole, setCurrentRole] = useState<UserRole>(() => {
+    const savedUser = api.getUser();
+    if (savedUser?.role) {
+      return (savedUser.role === "teacher" ? "faculty" : savedUser.role) as UserRole;
+    }
+    return "student";
+  });
+  const [activeNavId, setActiveNavId] = useState<string>(() => {
+    const savedUser = api.getUser();
+    const r = savedUser?.role;
+    if (r === "admin") return "admin_overview";
+    if (r === "teacher" || r === "faculty") return "history";
+    if (r === "pr") return "pr_pipeline";
+    if (r === "placement_coordinator") return "coordinator_drives";
+    return "student_dashboard";
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return Boolean(api.getToken());
+  });
+
+  // Verify session on mount with backend /auth/me
+  useEffect(() => {
+    if (api.getToken()) {
+      api.getMe()
+        .then((profile) => {
+          setCurrentUser(profile);
+          api.setUser(profile);
+          const r = (profile.role === "teacher" ? "faculty" : profile.role) as UserRole;
+          setCurrentRole(r);
+          setIsAuthenticated(true);
+        })
+        .catch(() => {
+          // Token expired or invalid
+          api.clearToken();
+          setCurrentUser(null);
+          setIsAuthenticated(false);
+        });
+    }
+  }, []);
+
+  const handleLoginSuccess = (user: UserProfileData, role: UserRole) => {
+    setCurrentUser(user);
+    setCurrentRole(role);
+    setIsAuthenticated(true);
+    if (role === "student") setActiveNavId("student_dashboard");
+    else if (role === "faculty") setActiveNavId("history");
+    else if (role === "admin") setActiveNavId("admin_overview");
+    else if (role === "pr") setActiveNavId("pr_pipeline");
+    else if (role === "placement_coordinator") setActiveNavId("coordinator_drives");
+    navigate("/");
+  };
+
+  const handleLogout = () => {
+    api.clearToken();
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+    navigate("/login");
+  };
 
   const renderContent = () => {
     // 1. SUPER ADMIN: Unrestricted access across all modules & systems
@@ -128,7 +190,7 @@ export const App: React.FC = () => {
                   Batch Upload Documents
                 </h1>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  Upload multiple student offer letters or employment agreements for automated 7-agent verification.
+                  Upload multiple student offer letters or employment agreements for automated placement verification.
                 </p>
               </div>
 
@@ -140,7 +202,7 @@ export const App: React.FC = () => {
                   Drag and drop student offer letters
                 </h3>
                 <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-                  Supports PDF, PNG, JPG up to 25MB each. Agent 2 (OCR) and Agent 3 (Tamper Detector) run automatically.
+                  Supports PDF, PNG, JPG up to 25MB each. Automated OCR extraction and validation run automatically.
                 </p>
                 <div className="mt-6 flex items-center justify-center gap-3">
                   <Button className="bg-blue-600 hover:bg-blue-700 text-white text-xs">
@@ -204,7 +266,7 @@ export const App: React.FC = () => {
         <div className="space-y-6">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Help & Support</h1>
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
-            <p className="text-sm text-slate-500">Need assistance with 7-Agent AI checks, PR cohorts or ERP exports? Contact university placement support.</p>
+            <p className="text-sm text-slate-500">Need assistance with placement verification, PR cohorts or ERP exports? Contact university placement support.</p>
           </div>
         </div>
       );
@@ -215,21 +277,45 @@ export const App: React.FC = () => {
 
   return (
     <ThemeProvider defaultTheme="dark" storageKey="placify-ui-theme">
-      <AppLayout
-        currentRole={currentRole}
-        onRoleChange={(newRole) => {
-          setCurrentRole(newRole);
-          if (newRole === "faculty") setActiveNavId("history");
-          else if (newRole === "admin") setActiveNavId("admin_overview");
-          else if (newRole === "pr") setActiveNavId("pr_pipeline");
-          else if (newRole === "placement_coordinator") setActiveNavId("coordinator_drives");
-          else if (newRole === "student") setActiveNavId("student_dashboard");
-        }}
-        activeNavId={activeNavId}
-        onNavSelect={setActiveNavId}
-      >
-        {renderContent()}
-      </AppLayout>
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/" replace />
+            ) : (
+              <LoginPage onLoginSuccess={handleLoginSuccess} />
+            )
+          }
+        />
+        <Route
+          path="/*"
+          element={
+            !isAuthenticated ? (
+              <Navigate to="/login" replace />
+            ) : (
+              <AppLayout
+                currentRole={currentRole}
+                onRoleChange={(newRole) => {
+                  setCurrentRole(newRole);
+                  if (newRole === "faculty") setActiveNavId("history");
+                  else if (newRole === "admin") setActiveNavId("admin_overview");
+                  else if (newRole === "pr") setActiveNavId("pr_pipeline");
+                  else if (newRole === "placement_coordinator") setActiveNavId("coordinator_drives");
+                  else if (newRole === "student") setActiveNavId("student_dashboard");
+                }}
+                activeNavId={activeNavId}
+                onNavSelect={setActiveNavId}
+                onLogout={handleLogout}
+                userEmail={currentUser?.email}
+                userProgram={currentUser?.program}
+              >
+                {renderContent()}
+              </AppLayout>
+            )
+          }
+        />
+      </Routes>
     </ThemeProvider>
   );
 };

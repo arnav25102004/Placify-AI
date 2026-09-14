@@ -20,7 +20,8 @@ import {
   Sparkles,
   Check,
   ShieldAlert,
-  Activity
+  Activity,
+  LogOut
 } from "lucide-react";
 import { ThemeToggle } from "@/shared/components/ui/theme-toggle";
 import { Input } from "@/shared/components/ui/input";
@@ -55,6 +56,9 @@ interface AppLayoutProps {
   onRoleChange: (role: UserRole) => void;
   activeNavId: string;
   onNavSelect: (navId: string) => void;
+  onLogout?: () => void;
+  userEmail?: string;
+  userProgram?: string;
   children: React.ReactNode;
 }
 
@@ -63,6 +67,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   onRoleChange,
   activeNavId,
   onNavSelect,
+  onLogout,
+  userEmail,
+  userProgram,
   children,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -77,41 +84,35 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       { id: "comparisons", label: "Comparisons", icon: ArrowRightLeft },
       { id: "history", label: "History", icon: Clock },
     ],
-    // 2. PR Hub — Cohort of 15 assigned students, ingestion requests, PR pipeline
+    // 2. PR Hub — Ingestion tasks, PR pipeline and 15-student cohort management
     pr: [
-      { id: "pr_pipeline", label: "PR Pipeline", icon: Users, badge: "15 Students" },
-      { id: "upload_requests", label: "Document Ingestion", icon: UploadCloud, badge: "New" },
-      { id: "history", label: "Submission History", icon: Clock },
+      { id: "pr_pipeline", label: "PR Pipeline", icon: Users },
+      { id: "cohort_15", label: "15 Students Cohort", icon: GraduationCap, badge: 15 },
     ],
-    // 3. Placement Coordinator — Multi-company drives, eligibility, ERP sync & audit trails
+    // 3. Placement Coordinator — Campus drives, company master, batch verification & ERP exports
     placement_coordinator: [
-      { id: "coordinator_drives", label: "Placement Drives", icon: Building, badge: "Live" },
-      { id: "erp_sync", label: "ERP & Audit Sync", icon: FileCheck2 },
-      { id: "comparisons", label: "Campus Analytics", icon: ArrowRightLeft },
-      { id: "history", label: "Master Records", icon: Clock },
+      { id: "coordinator_drives", label: "Campus Drives", icon: Building },
+      { id: "erp_sync", label: "ERP Export Sync", icon: ArrowRightLeft },
+      { id: "history", label: "Audit Log", icon: Clock },
     ],
-    // 4. Student — View own placement status, upload offer letter, view senior mentors
+    // 4. Student — My placements, upload offer, senior placement directory
     student: [
-      { id: "student_dashboard", label: "My Placements", icon: LayoutGrid },
-      { id: "upload", label: "Upload Offer Letter", icon: UploadCloud, badge: "Action" },
-      { id: "comparisons", label: "Senior Placements", icon: GraduationCap },
-      { id: "history", label: "Status History", icon: Clock },
+      { id: "student_dashboard", label: "Student Portal", icon: LayoutGrid },
     ],
-    // 5. Admin — UNRESTRICTED FULL ROOT ACCESS across all subsystems
+    // 5. Admin — Full visibility across all modules
     admin: [
-      { id: "admin_overview", label: "Admin Console", icon: ShieldAlert, badge: "Root", section: "Governance" },
-      { id: "comparisons", label: "Compare Document", icon: ArrowRightLeft, badge: "Verify", section: "Governance" },
-      { id: "history", label: "Global Doc History", icon: Clock, badge: 892, section: "Governance" },
-      { id: "coordinator_drives", label: "Drives & Placements", icon: Building, section: "Institutional" },
-      { id: "pr_pipeline", label: "PR 1:15 Cohorts", icon: Users, badge: 74, section: "Institutional" },
-      { id: "student_dashboard", label: "Student Experience", icon: GraduationCap, section: "Institutional" },
+      { id: "admin_overview", label: "Institutional Overview", icon: ShieldAlert },
+      { id: "history", label: "All Verifications", icon: Clock },
+      { id: "coordinator_drives", label: "All Campus Drives", icon: Building },
+      { id: "pr_pipeline", label: "PR Cohorts", icon: Users },
+      { id: "student_dashboard", label: "Student View", icon: GraduationCap },
     ],
   };
 
-  // User profile representation per role
+  // User profile mockups tailored to each persona's role
   const roleProfiles: Record<UserRole, UserProfileConfig> = {
     faculty: {
-      name: "Meera Iyer",
+      name: "Dr. Mary Issac",
       email: "teacher@example.com",
       roleLabel: "Teacher",
       initials: "MI",
@@ -137,10 +138,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     student: {
       name: "Arnav Sharma",
       email: "arnav.21cs042@example.com",
-      roleLabel: "Student",
+      roleLabel: userProgram ? `Student (${userProgram})` : "Student",
       initials: "AS",
       avatarBg: "bg-blue-600 text-white",
-      roleSubtitle: "CS-2021-042 • 8.92 CGPA",
+      roleSubtitle: userProgram ? `Program: ${userProgram} • Placement Portal` : "CS-2021-042 • 8.92 CGPA",
     },
     admin: {
       name: "Admin Controller",
@@ -273,12 +274,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             })}
           </nav>
 
-          {/* Mid-Sidebar Widget: 7-Agent Status Micro-Card */}
+          {/* Mid-Sidebar Widget: Intelligence Status Micro-Card */}
           <div className="pt-2 px-1">
             <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-transparent border border-slate-200/80 dark:border-slate-800 space-y-2">
               <div className="flex items-center justify-between text-[11px]">
                 <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <Activity className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> 7-Agent Engine
+                  <Activity className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Verification Engine
                 </span>
                 <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Active</span>
               </div>
@@ -329,9 +330,18 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 {currentProfile.name}
               </div>
               <div className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
-                {currentProfile.email}
+                {userEmail || currentProfile.email}
               </div>
             </div>
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                title="Sign Out"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </aside>
@@ -372,6 +382,18 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               <Bell className="w-4 h-4" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-600 rounded-full ring-2 ring-white dark:ring-slate-950" />
             </button>
+
+            {/* Sign Out Button in Header */}
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                title="Sign Out"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200/80 dark:border-rose-900/50 transition-colors cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            )}
 
             {/* Role Selector Pill Dropdown */}
             <DropdownMenu>
@@ -478,6 +500,19 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   </div>
                   {currentRole === "student" && <Check className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
                 </DropdownMenuItem>
+
+                {onLogout && (
+                  <>
+                    <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                    <DropdownMenuItem
+                      onClick={onLogout}
+                      className="flex items-center gap-2 p-2 rounded-lg text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sign Out</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

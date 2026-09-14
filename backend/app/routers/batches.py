@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies.auth import get_current_teacher
+from app.logging_config import get_logger
 from app.models.batch import Batch
 from app.models.document import Document
 from app.models.extraction import Extraction
@@ -18,6 +19,7 @@ from app.schemas.document import DocumentStatus
 from app.services.drive_adapter import drive_adapter
 from app.tasks.extraction import extract_document, process_document_extraction
 
+logger = get_logger("placify.batches")
 router = APIRouter(prefix="/api/v1/batches", tags=["batches"])
 
 MAX_FILES_PER_BATCH = 50
@@ -47,6 +49,7 @@ def create_batch(
     db.add(batch)
     db.commit()
     db.refresh(batch)
+    logger.info(f"Created batch id={batch.id} with {len(files)} files by teacher_id={current_teacher.id}")
 
     for upload_file in files:
         content = upload_file.file.read()
@@ -67,6 +70,7 @@ def create_batch(
         db.add(doc)
         db.commit()
         db.refresh(doc)
+        logger.info(f"Enqueued document id={doc.id} ('{filename}') for extraction in batch_id={batch.id}")
 
         # Enqueue async extraction job
         use_celery = False
@@ -83,9 +87,9 @@ def create_batch(
             try:
                 extract_document.delay(doc.id)
             except Exception:
-                process_document_extraction(doc.id)
+                process_document_extraction(doc.id, db=db)
         else:
-            process_document_extraction(doc.id)
+            process_document_extraction(doc.id, db=db)
 
     return BatchCreateResponse(id=batch.id, file_count=batch.file_count, status=batch.status)
 
@@ -135,26 +139,32 @@ def export_batch(
     if batch is None:
         raise HTTPException(status_code=404, detail="Batch not found")
 
-    # Fetch verified documents with their extractions
+    # Fetch verified documents and their latest extractions
     verified_docs = (
-        db.query(Document, Extraction)
-        .join(Extraction, Document.id == Extraction.document_id)
+        db.query(Document)
         .filter(Document.batch_id == batch.id, Document.status == "verified")
         .all()
     )
 
     records = []
-    for doc, ext in verified_docs:
-        records.append({
-            "document_id": doc.id,
-            "drive_file_id": doc.drive_file_id,
-            "student_name": ext.student_name,
-            "company": ext.company,
-            "package": float(ext.package) if ext.package is not None else None,
-            "role": ext.role,
-            "offer_type": ext.offer_type,
-            "confidence": float(ext.confidence),
-        })
+    for doc in verified_docs:
+        ext = (
+            db.query(Extraction)
+            .filter(Extraction.document_id == doc.id)
+            .order_by(Extraction.id.desc())
+            .first()
+        )
+        if ext:
+            records.append({
+                "document_id": doc.id,
+                "drive_file_id": doc.drive_file_id,
+                "student_name": ext.student_name,
+                "company": ext.company,
+                "package": float(ext.package) if ext.package is not None else None,
+                "role": ext.role,
+                "offer_type": ext.offer_type,
+                "confidence": float(ext.confidence),
+            })
 
     if format.lower() == "csv":
         output = io.StringIO()

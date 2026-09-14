@@ -91,7 +91,7 @@ export const FacultyVerificationWorkspacePage: React.FC<{ documentId?: number }>
           <div className="flex items-center gap-2.5 flex-wrap">
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Faculty Verification Workspace</h1>
             <span className="text-xs px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-700 border border-emerald-300 flex items-center gap-1 font-semibold">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> 7-Agent Pre-Checked
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> AI Pre-Checked
             </span>
           </div>
           <p className="text-sm text-gray-600 mt-1">
@@ -193,12 +193,12 @@ export const FacultyVerificationWorkspacePage: React.FC<{ documentId?: number }>
 
         {/* Right Pane: AI Discrepancy Insights & Editable Auto-Matched Fields */}
         <div className={styles.rightPane}>
-          {/* 7-Agent Insights Card */}
+          {/* AI Insights Card */}
           <div className={styles.insightBox}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 font-bold text-blue-950 text-sm">
                 <Sparkles className="w-4 h-4 text-blue-600" />
-                <span>Multi-Agent Discrepancy & Fraud Audit</span>
+                <span>AI Discrepancy & Fraud Audit</span>
               </div>
               <Badge variant="success" className="bg-emerald-100 text-emerald-800 font-semibold text-xs">
                 Authenticity: {agentInsights.authenticityScore}%

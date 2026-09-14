@@ -95,7 +95,7 @@ export const AdminOverviewPage: React.FC<AdminOverviewPageProps> = ({ onNavigate
             <FileCheck2 className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-2xl font-bold text-slate-900 dark:text-white mt-2">892 Offers</div>
-          <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium">96.4% 7-Agent Confidence</div>
+          <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium">96.4% Verification Accuracy</div>
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
@@ -188,33 +188,32 @@ export const AdminOverviewPage: React.FC<AdminOverviewPageProps> = ({ onNavigate
         </div>
       </div>
 
-      {/* 7-Agent System Heartbeat Panel */}
+      {/* System Microservices Heartbeat Panel */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-4">
           <div className="flex items-center gap-2.5">
             <Server className="w-5 h-5 text-blue-600" />
             <div>
               <h3 className="font-semibold text-sm text-slate-900 dark:text-white">
-                7-Agent Autonomous Intelligence Engine
+                Autonomous Verification & Audit Engine
               </h3>
-              <p className="text-[11px] text-slate-500">Real-time daemon statuses across Celery & Redis pipeline</p>
+              <p className="text-[11px] text-slate-500">Real-time daemon statuses across pipeline services</p>
             </div>
           </div>
           <span className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            All 7 Agents Operational
+            All Pipeline Services Operational
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
           {[
-            { id: "Agent 1", name: "Ingestion & Pre-OCR", status: "Healthy", time: "14ms avg" },
-            { id: "Agent 2", name: "Information Extraction (Parser)", status: "Healthy", time: "1.8s avg" },
-            { id: "Agent 3", name: "Authenticity & Fraud Detector", status: "Healthy", time: "340ms avg" },
-            { id: "Agent 4", name: "Cross-Verification & Profile Match", status: "Healthy", time: "92ms avg" },
-            { id: "Agent 5", name: "Faculty Discrepancy Assistant", status: "Healthy", time: "410ms avg" },
-            { id: "Agent 6", name: "Referral & Mentorship Matcher", status: "Healthy", time: "120ms avg" },
-            { id: "Agent 7", name: "Audit & ERP Sync Compliance", status: "Healthy", time: "180ms avg" },
+            { id: "Service 1", name: "Document Ingestion & Parsing", status: "Healthy", time: "14ms avg" },
+            { id: "Service 2", name: "Information Extraction (Parser)", status: "Healthy", time: "1.8s avg" },
+            { id: "Service 3", name: "Authenticity & Fraud Detector", status: "Healthy", time: "340ms avg" },
+            { id: "Service 4", name: "Cross-Verification & Profile Match", status: "Healthy", time: "92ms avg" },
+            { id: "Service 5", name: "Faculty Discrepancy Assistant", status: "Healthy", time: "410ms avg" },
+            { id: "Service 6", name: "Audit & ERP Sync Compliance", status: "Healthy", time: "180ms avg" },
           ].map((agent) => (
             <div
               key={agent.id}

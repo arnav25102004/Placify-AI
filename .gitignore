@@ -18,9 +18,11 @@ build/
 .vscode/
 .idea/
 
-# Database
+# Database & Local Uploads
 *.db
 *.db-journal
+backend/data/
+data/
 
 # OS
 .DS_Store

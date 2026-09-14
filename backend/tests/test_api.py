@@ -8,6 +8,13 @@ def test_login(client):
     data = res.json()
     assert "access_token" in data
     assert data["token_type"] == "bearer"
+    assert data["user"]["email"] == "testteacher@placify.ai"
+    assert data["user"]["role"] == "teacher"
+
+    token = data["access_token"]
+    res_me = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert res_me.status_code == 200
+    assert res_me.json()["email"] == "testteacher@placify.ai"
 
     # Failed login
     res_fail = client.post("/api/v1/auth/login", json={"email": "testteacher@placify.ai", "password": "wrongpassword"})
@@ -88,3 +95,17 @@ def test_batch_upload_and_verification_flow(client, auth_headers):
     assert res_csv.status_code == 200
     assert "text/csv" in res_csv.headers["content-type"]
     assert "student_name" in res_csv.text
+
+
+def test_request_id_header_and_logging_correlation(client):
+    # Test request ID propagation and generation
+    res = client.get("/health")
+    assert res.status_code == 200
+    assert "x-request-id" in res.headers
+
+    # Test custom passed request ID preservation
+    custom_id = "custom-test-trace-999"
+    res_custom = client.get("/health", headers={"X-Request-ID": custom_id})
+    assert res_custom.status_code == 200
+    assert res_custom.headers.get("x-request-id") == custom_id
+

@@ -119,7 +119,7 @@ export const PRPipelinePage: React.FC = () => {
     );
     setIsSheetOpen(false);
     setSuccessToast(
-      `Offer letter for ${selectedStudent.name} uploaded to College Drive. Assigned ${inchargeFaculty}. 7-Agent verification pipeline initiated.`
+      `Offer letter for ${selectedStudent.name} uploaded to College Drive. Assigned ${inchargeFaculty}. Automated verification pipeline initiated.`
     );
     setTimeout(() => setSuccessToast(null), 6000);
   };
@@ -230,7 +230,7 @@ export const PRPipelinePage: React.FC = () => {
               <span>Branch: <strong className="text-slate-100">CSE (Section A)</strong></span>
               <span>•</span>
               <span className="text-emerald-400 flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5" /> 7-Agent Guard Active
+                <ShieldCheck className="w-3.5 h-3.5" /> Automated Verification Active
               </span>
             </div>
           </div>
@@ -652,13 +652,13 @@ export const PRPipelinePage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 7-Agent Checklist Indicator */}
+                {/* AI Verification Checklist Indicator */}
                 <div className="bg-slate-900 text-slate-200 rounded-xl p-3.5 space-y-2 text-xs border border-slate-800">
                   <div className="flex items-center gap-1.5 text-amber-400 font-semibold">
-                    <Bot className="w-4 h-4" /> 7-Agent AI Verification Pipeline
+                    <Bot className="w-4 h-4" /> Automated AI Verification Pipeline
                   </div>
                   <p className="text-[11px] text-slate-400 leading-normal">
-                    Upon submission, Agent 1 extracts terms (CTC, DOJ), Agent 2 runs tamper detection, and Agent 3 verifies against college placement policy before notifying {inchargeFaculty}.
+                    Upon submission, our automated parser extracts terms (CTC, DOJ), runs authenticity checks, and verifies against college placement policy before notifying {inchargeFaculty}.
                   </p>
                 </div>
 

@@ -4,6 +4,9 @@ import random
 from typing import Dict, Any, Optional
 from pydantic import BaseModel, Field
 
+from app.logging_config import get_logger
+
+logger = get_logger("placify.gemini")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 class ExtractionResult(BaseModel):
@@ -39,14 +42,18 @@ class GeminiAdapter:
             try:
                 from google import genai
                 self._client = genai.Client(api_key=GEMINI_API_KEY)
+                logger.info("Initialized Google GenAI Client with configured API key.")
             except Exception:
                 try:
                     import google.generativeai as genai_legacy
                     genai_legacy.configure(api_key=GEMINI_API_KEY)
                     self._client = genai_legacy.GenerativeModel("gemini-1.5-pro")
+                    logger.info("Initialized legacy Google GenerativeModel ('gemini-1.5-pro').")
                 except Exception as e:
-                    print(f"[GeminiAdapter] Failed to initialize Gemini API client: {e}")
+                    logger.warning(f"Failed to initialize Gemini API client: {e}. Fallback mock active.")
                     self._client = None
+        else:
+            logger.info("No Gemini API key provided; active in deterministic intelligent mock mode.")
 
     def extract_fields(self, file_bytes: bytes, filename: str) -> ExtractionResult:
         """
@@ -82,7 +89,7 @@ class GeminiAdapter:
                 data = json.loads(clean_text.strip())
                 return ExtractionResult(**data)
             except Exception as e:
-                print(f"[GeminiAdapter] Extraction error, falling back to heuristic: {e}")
+                logger.warning(f"Gemini AI extraction error: {e}. Falling back to deterministic heuristic.")
 
         # Deterministic Mock Fallback for local development / testing
         sample_names = ["Aarav Sharma", "Priya Patel", "Rohan Verma", "Ananya Iyer", "Vikram Singh"]

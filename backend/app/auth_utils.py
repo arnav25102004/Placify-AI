@@ -7,9 +7,10 @@ import jwt
 
 load_dotenv()
 
-JWT_SECRET = os.getenv("JWT_SECRET", "default_secret_key_for_dev")
+JWT_SECRET = os.getenv("JWT_SECRET", "placify_ai_secure_jwt_secret_key_2026_dev_environment")
 JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+# 3 days persistent session
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 3
 
 
 def verify_password(plain_password: str, password_hash: str) -> bool:
@@ -36,3 +37,8 @@ def create_access_token(user_id: int, role: str, campus_id: int) -> str:
         "exp": expire,
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def decode_token(token: str) -> dict:
+    return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+

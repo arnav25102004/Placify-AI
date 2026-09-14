@@ -230,7 +230,7 @@ export const StudentDashboardPage: React.FC = () => {
                     )}
                     {req.status === "processing" && (
                       <Badge variant="warning" className="bg-blue-50 text-blue-700 border-blue-200">
-                        7-Agent Extraction & Audit Running...
+                        Automated Extraction & Audit Running...
                       </Badge>
                     )}
                     {req.status === "verified" && (
@@ -447,7 +447,7 @@ export const StudentDashboardPage: React.FC = () => {
                 className="bg-blue-600 hover:bg-blue-700 gap-1.5"
               >
                 {isUploading ? (
-                  <>Processing with 7 Agents...</>
+                  <>Processing Verification Pipeline...</>
                 ) : (
                   <>
                     <UploadCloud className="w-4 h-4" /> Confirm & Send to In-charge

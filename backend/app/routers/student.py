@@ -6,12 +6,14 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies.auth import get_current_student
+from app.logging_config import get_logger
 from app.models.document import Document
 from app.models.user import User
 from app.schemas.document import DocumentStatus
 from app.services.drive_adapter import drive_adapter
 from app.tasks.extraction import extract_document, process_document_extraction
 
+logger = get_logger("placify.student")
 router = APIRouter(prefix="/api/v1/student", tags=["student"])
 
 
@@ -51,6 +53,7 @@ def submit_offer_letter(
     db.add(doc)
     db.commit()
     db.refresh(doc)
+    logger.info(f"Student id={current_student.id} submitted offer letter '{filename}', enqueued document id={doc.id}")
 
     # Enqueue async extraction job
     use_celery = False
@@ -67,9 +70,11 @@ def submit_offer_letter(
         try:
             extract_document.delay(doc.id)
         except Exception:
-            process_document_extraction(doc.id)
+            process_document_extraction(doc.id, db=db)
     else:
-        process_document_extraction(doc.id)
+        process_document_extraction(doc.id, db=db)
+
+    db.refresh(doc)
 
     return DocumentStatus(
         id=doc.id,

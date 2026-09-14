@@ -4,8 +4,8 @@
   "private": true,
   "description": "Placify AI placement platform",
   "scripts": {
-    "dev:all": "docker compose up --build",
-    "dev:all:local": "./run.sh",
+    "dev:all": "./run.sh",
+    "dev:all:docker": "docker compose up --build",
     "dev:frontend": "pnpm --filter placify-frontend dev",
     "dev:down": "docker compose down"
   }

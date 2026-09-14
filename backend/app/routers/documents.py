@@ -4,6 +4,7 @@ from sqlalchemy import or_
 
 from app.database import get_db
 from app.dependencies.auth import get_current_teacher
+from app.logging_config import get_logger
 from app.models.audit_log import AuditLog
 from app.models.batch import Batch
 from app.models.document import Document
@@ -11,6 +12,7 @@ from app.models.extraction import Extraction
 from app.models.user import User
 from app.schemas.document import DocumentDetail, VerifyActionRequest
 
+logger = get_logger("placify.documents")
 router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
 
 
@@ -117,5 +119,38 @@ def verify_document(
         )
     )
     db.commit()
+    logger.info(
+        f"Verification decision recorded: action='{action.action}', document_id={document.id}, "
+        f"new_status='{document.status}', actor_id={current_teacher.id}, reason='{action.reason or 'N/A'}'"
+    )
 
     return {"id": document.id, "status": document.status}
+
+
+@router.get("/files/{file_id}")
+def get_local_file(file_id: str):
+    """
+    Serves stored local documents for verification workspace viewing.
+    """
+    import os
+    from fastapi.responses import Response
+
+    safe_name = file_id.removeprefix("local_")
+    LOCAL_STORAGE_DIR = os.getenv(
+        "LOCAL_STORAGE_DIR",
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "uploads"),
+    )
+    file_path = os.path.join(LOCAL_STORAGE_DIR, safe_name)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Local file not found")
+
+    content_type = "application/pdf"
+    if safe_name.lower().endswith(".png"):
+        content_type = "image/png"
+    elif safe_name.lower().endswith((".jpg", ".jpeg")):
+        content_type = "image/jpeg"
+
+    with open(file_path, "rb") as f:
+        data = f.read()
+
+    return Response(content=data, media_type=content_type)

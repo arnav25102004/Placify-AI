@@ -1,8 +1,17 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
+export interface UserProfileData {
+  id: number;
+  email: string;
+  role: string;
+  campus_id: number;
+  program?: string;
+}
+
 export interface LoginResponse {
   access_token: string;
   token_type: string;
+  user?: UserProfileData;
 }
 
 export interface BatchSummary {
@@ -55,7 +64,7 @@ class ApiClient {
   private token: string | null = localStorage.getItem("placify_token");
 
   public setToken(token: string) {
-    self.localStorage.setItem("placify_token", token);
+    localStorage.setItem("placify_token", token);
     this.token = token;
   }
 
@@ -63,8 +72,22 @@ class ApiClient {
     return this.token || localStorage.getItem("placify_token");
   }
 
+  public setUser(user: UserProfileData) {
+    localStorage.setItem("placify_user", JSON.stringify(user));
+  }
+
+  public getUser(): UserProfileData | null {
+    try {
+      const raw = localStorage.getItem("placify_user");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
   public clearToken() {
     localStorage.removeItem("placify_token");
+    localStorage.removeItem("placify_user");
     this.token = null;
   }
 
@@ -81,11 +104,16 @@ class ApiClient {
   }
 
   public async login(email: string, password: string): Promise<LoginResponse> {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+    } catch (netErr: any) {
+      throw new Error("Unable to connect to backend server. Please make sure the backend is running on port 8000.");
+    }
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: "Login failed" }));
@@ -94,7 +122,48 @@ class ApiClient {
 
     const data: LoginResponse = await res.json();
     this.setToken(data.access_token);
+    if (data.user) {
+      this.setUser(data.user);
+    }
     return data;
+  }
+
+  public async register(email: string, password: string, campus_id: number = 1): Promise<LoginResponse> {
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, campus_id }),
+      });
+    } catch (netErr: any) {
+      throw new Error("Unable to connect to backend server. Please make sure the backend is running on port 8000.");
+    }
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Registration failed" }));
+      throw new Error(err.detail || "Registration failed");
+    }
+
+    const data: LoginResponse = await res.json();
+    this.setToken(data.access_token);
+    if (data.user) {
+      this.setUser(data.user);
+    }
+    return data;
+  }
+
+  public async getMe(): Promise<UserProfileData> {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: this.getHeaders(),
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch authenticated profile");
+    }
+
+    return res.json();
   }
 
   public async uploadBatch(files: File[]): Promise<{ id: number; file_count: number; status: string }> {
